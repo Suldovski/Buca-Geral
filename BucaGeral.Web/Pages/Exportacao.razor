@@ -1,0 +1,317 @@
+@page "/exportacao"
+@layout MainLayout
+@using BucaGeral.Web.Services
+@using BucaGeral.Models
+@inject ApiService ApiService
+@inject ILogger<Exportacao> Logger
+
+<div class="exportacao-container">
+    <div class="page-header">
+        <h1>📥 Exportar Dados</h1>
+        <p style="color: var(--secondary); margin-top: var(--spacing-sm);">Consolide dados de múltiplas obras em um único arquivo</p>
+    </div>
+
+    @if (Carregando)
+    {
+        <div style="text-align: center; padding: var(--spacing-xl);">
+            <p>⏳ Carregando dados...</p>
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(Erro))
+    {
+        <div class="alert alert-danger">
+            ❌ @Erro
+        </div>
+    }
+    else
+    {
+        <div class="exportacao-form">
+            <!-- Seleção de Obras -->
+            <div class="form-section">
+                <h3>📋 Selecione as Obras</h3>
+                <p style="color: var(--secondary); margin-bottom: var(--spacing-md); font-size: 14px;">
+                    Escolha quais obras deseja incluir na exportação
+                </p>
+
+                @if (Obras.Count == 0)
+                {
+                    <div class="alert alert-warning">
+                        ⚠️ Nenhuma obra cadastrada. <a href="/obras">Cadastre uma obra primeiro.</a>
+                    </div>
+                }
+                else
+                {
+                    <div class="obras-checklist">
+                        @foreach (var obra in Obras)
+                        {
+                            var id = $"obra-{obra.Id}";
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="@id" @onchange="@((ChangeEventArgs e) => AlternarObra(obra.Id, (bool)e.Value))" />
+                                <label for="@id" class="checkbox-label">
+                                    <span>@obra.Nome</span>
+                                    <span style="color: var(--secondary); font-size: 12px;">
+                                        (@Funcionarios.Count(f => f.ObraId == obra.Id) funcionários)
+                                    </span>
+                                </label>
+                            </div>
+                        }
+                    </div>
+
+                    <p style="margin-top: var(--spacing-md); color: var(--gray-dark); font-size: 14px;">
+                        <strong>@Obraselecionadas.Count</strong> obra(s) selecionada(s) | 
+                        <strong>@FuncionariosExportacao.Count</strong> funcionário(s) para exportar
+                    </p>
+                }
+            </div>
+
+            <!-- Filtros -->
+            <div class="form-section">
+                <h3>🔍 Filtros Opcionais</h3>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: var(--spacing-md);">
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select class="form-control" @bind="StatusFiltro">
+                            <option value="">-- Todos os Status --</option>
+                            <option value="ativo">✅ Ativo</option>
+                            <option value="afastado">⏸️ Afastado</option>
+                            <option value="demitido">❌ Demitido</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Período (Data Inicial)</label>
+                        <input type="date" class="form-control" @bind="DataInicio" />
+                    </div>
+
+                    <div class="form-group">
+                        <label>Período (Data Final)</label>
+                        <input type="date" class="form-control" @bind="DataFim" />
+                    </div>
+                </div>
+            </div>
+
+            <!-- Informações -->
+            <div class="exportacao-info">
+                <h3>ℹ️ Informações sobre a Exportação</h3>
+                <p>
+                    📊 <strong>Formato:</strong> Excel (.xlsx) com abas separadas por obra
+                </p>
+                <p>
+                    📈 <strong>Conteúdo:</strong> Nome, CPF, Email, Cargo, Salário, Data Admissão, Status
+                </p>
+                <p>
+                    ✅ <strong>Consolidação:</strong> Todos os funcionários selecionados em um único arquivo
+                </p>
+                <p>
+                    🔒 <strong>Segurança:</strong> Dados criptografados durante transferência
+                </p>
+            </div>
+
+            <!-- Ações -->
+            <div class="form-actions">
+                <button class="btn btn-success btn-lg" @onclick="ExportarExcel" 
+                        disabled="@(Obraselecionadas.Count == 0 || ExportandoExcel)">
+                    @if (ExportandoExcel)
+                    {
+                        <span>⏳ Exportando...</span>
+                    }
+                    else
+                    {
+                        <span>📥 Exportar Excel</span>
+                    }
+                </button>
+
+                <button class="btn btn-secondary btn-lg" @onclick="ExportarCSV"
+                        disabled="@(Obraselecionadas.Count == 0 || ExportandoCSV)">
+                    @if (ExportandoCSV)
+                    {
+                        <span>⏳ Exportando...</span>
+                    }
+                    else
+                    {
+                        <span>📥 Exportar CSV</span>
+                    }
+                </button>
+
+                <button class="btn btn-info btn-lg" @onclick="VerPreview">
+                    👁️ Visualizar Dados
+                </button>
+            </div>
+        </div>
+
+        <!-- Preview -->
+        @if (MostrarPreview && FuncionariosExportacao.Count > 0)
+        {
+            <div style="margin-top: var(--spacing-xl);">
+                <h3 style="margin-bottom: var(--spacing-md);">👁️ Preview dos Dados</h3>
+                <div class="table-responsive">
+                    <table class="tabela-funcionarios">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>CPF</th>
+                                <th>Email</th>
+                                <th>Obra</th>
+                                <th>Cargo</th>
+                                <th>Salário</th>
+                                <th>Data Admissão</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var func in FuncionariosExportacao.Take(50))
+                            {
+                                var obra = Obras.FirstOrDefault(o => o.Id == func.ObraId);
+                                <tr>
+                                    <td>@func.Nome</td>
+                                    <td>@func.Cpf</td>
+                                    <td>@func.Email</td>
+                                    <td>@obra?.Nome</td>
+                                    <td>@func.Cargo</td>
+                                    <td>R$ @func.Salario.ToString("N2")</td>
+                                    <td>@func.DataAdmissao?.ToString("dd/MM/yyyy")</td>
+                                    <td>
+                                        @{
+                                            var statusClass = func.Status == "ativo" ? "badge-success" : (func.Status == "afastado" ? "badge-warning" : "badge-danger");
+                                            var statusEmoji = func.Status == "ativo" ? "✅" : (func.Status == "afastado" ? "⏸️" : "❌");
+                                        }
+                                        <span class="badge @statusClass">@statusEmoji @func.Status</span>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                
+                @if (FuncionariosExportacao.Count > 50)
+                {
+                    <p style="margin-top: var(--spacing-md); color: var(--secondary); font-size: 12px;">
+                        Mostrando 50 de @FuncionariosExportacao.Count registros
+                    </p>
+                }
+            </div>
+        }
+    }
+</div>
+
+@code {
+    private List<Obra> Obras = new();
+    private List<Funcionario> Funcionarios = new();
+    private List<string> Obraselecionadas = new();
+    private bool Carregando = true;
+    private string Erro = "";
+
+    // Filtros
+    private string StatusFiltro = "";
+    private DateTime? DataInicio;
+    private DateTime? DataFim;
+
+    // Estados
+    private bool ExportandoExcel = false;
+    private bool ExportandoCSV = false;
+    private bool MostrarPreview = false;
+
+    private List<Funcionario> FuncionariosExportacao
+    {
+        get
+        {
+            var resultado = Funcionarios
+                .Where(f => Obraselecionadas.Contains(f.ObraId))
+                .ToList();
+
+            if (!string.IsNullOrEmpty(StatusFiltro))
+            {
+                resultado = resultado.Where(f => f.Status == StatusFiltro).ToList();
+            }
+
+            if (DataInicio.HasValue)
+            {
+                resultado = resultado.Where(f => f.DataAdmissao >= DataInicio).ToList();
+            }
+
+            if (DataFim.HasValue)
+            {
+                resultado = resultado.Where(f => f.DataAdmissao <= DataFim).ToList();
+            }
+
+            return resultado;
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            Carregando = true;
+            Erro = "";
+
+            Obras = await ApiService.GetObrasAsync();
+            Funcionarios = await ApiService.GetFuncionariosAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError($"Erro ao carregar dados: {ex.Message}");
+            Erro = $"Erro ao carregar dados: {ex.Message}";
+        }
+        finally
+        {
+            Carregando = false;
+        }
+    }
+
+    private void AlternarObra(string obraId, bool selecionada)
+    {
+        if (selecionada)
+        {
+            if (!Obraselecionadas.Contains(obraId))
+                Obraselecionadas.Add(obraId);
+        }
+        else
+        {
+            Obraselecionadas.Remove(obraId);
+        }
+    }
+
+    private async Task ExportarExcel()
+    {
+        try
+        {
+            ExportandoExcel = true;
+            await ApiService.ExportarFuncionariosAsync(Obraselecionadas, StatusFiltro, DataInicio, DataFim, "excel");
+            // A API retorna o arquivo para download
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError($"Erro ao exportar Excel: {ex.Message}");
+            Erro = $"Erro ao exportar: {ex.Message}";
+        }
+        finally
+        {
+            ExportandoExcel = false;
+        }
+    }
+
+    private async Task ExportarCSV()
+    {
+        try
+        {
+            ExportandoCSV = true;
+            await ApiService.ExportarFuncionariosAsync(Obraselecionadas, StatusFiltro, DataInicio, DataFim, "csv");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError($"Erro ao exportar CSV: {ex.Message}");
+            Erro = $"Erro ao exportar: {ex.Message}";
+        }
+        finally
+        {
+            ExportandoCSV = false;
+        }
+    }
+
+    private void VerPreview()
+    {
+        MostrarPreview = !MostrarPreview;
+    }
+}
