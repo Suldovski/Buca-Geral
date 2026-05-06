@@ -1,0 +1,186 @@
+@page "/dashboard"
+@layout MainLayout
+@using BucaGeral.Web.Services
+@using BucaGeral.Models
+@inject ApiService ApiService
+@inject ILogger<Dashboard> Logger
+
+<div class="dashboard-container">
+    <div class="dashboard-header">
+        <h1>📊 Dashboard</h1>
+        <p>Bem-vindo ao Sistema de Controle de RH Multi-Obras</p>
+    </div>
+
+    @if (Carregando)
+    {
+        <div style="text-align: center; padding: var(--spacing-xl);">
+            <p>⏳ Carregando dados...</p>
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(Erro))
+    {
+        <div class="alert alert-danger">
+            ❌ @Erro
+        </div>
+    }
+    else
+    {
+        <!-- Métricas -->
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-icon">🏗️</div>
+                <div class="metric-content">
+                    <h3>Total de Obras</h3>
+                    <div class="metric-value">@Obras.Count</div>
+                </div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-icon">👥</div>
+                <div class="metric-content">
+                    <h3>Total de Funcionários</h3>
+                    <div class="metric-value">@TotalFuncionarios</div>
+                </div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-icon">✅</div>
+                <div class="metric-content">
+                    <h3>Funcionários Ativos</h3>
+                    <div class="metric-value">@FuncionariosAtivos</div>
+                </div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-icon">📋</div>
+                <div class="metric-content">
+                    <h3>Obras em Andamento</h3>
+                    <div class="metric-value">@ObrasAtivas</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gráficos e Informações -->
+        <div class="charts-section">
+            <div class="chart-container">
+                <h3>Distribuição por Obra</h3>
+                <div class="chart-placeholder">
+                    📊 Gráfico de distribuição de funcionários por obra (Em desenvolvimento)
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <h3>Status dos Funcionários</h3>
+                <div class="chart-placeholder">
+                    📈 Gráfico de status (Ativo/Demitido/Afastado)
+                </div>
+            </div>
+        </div>
+
+        <!-- Ações Rápidas -->
+        <div class="actions-section">
+            <h3>⚡ Ações Rápidas</h3>
+            <div class="action-buttons">
+                <a href="/funcionarios" class="btn btn-primary">
+                    <span>👥 Gerenciar Funcionários</span>
+                </a>
+                <a href="/obras" class="btn btn-secondary">
+                    <span>🏗️ Gerenciar Obras</span>
+                </a>
+                <a href="/exportacao" class="btn btn-success">
+                    <span>📥 Exportar Dados</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Resumo de Obras -->
+        <div style="margin-top: var(--spacing-xl);">
+            <h3 style="margin-bottom: var(--spacing-lg);">📋 Obras Cadastradas</h3>
+            
+            @if (Obras.Count == 0)
+            {
+                <div class="empty-state">
+                    <p>Nenhuma obra cadastrada ainda.</p>
+                    <a href="/obras" class="btn btn-primary" style="margin-top: var(--spacing-md);">
+                        Cadastrar Primeira Obra
+                    </a>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="tabela-funcionarios">
+                        <thead>
+                            <tr>
+                                <th>Código</th>
+                                <th>Nome</th>
+                                <th>Localização</th>
+                                <th>Funcionários</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var obra in Obras)
+                            {
+                                var qtdFunc = Funcionarios.Count(f => f.ObraId == obra.Id);
+                                <tr>
+                                    <td>
+                                        <strong>@obra.Codigo</strong>
+                                    </td>
+                                    <td>@obra.Nome</td>
+                                    <td>@obra.Localizacao</td>
+                                    <td>
+                                        <span class="badge badge-info">@qtdFunc</span>
+                                    </td>
+                                    <td>
+                                        @{
+                                            var statusClass = obra.Status == "em-andamento" ? "badge-success" : "badge-secondary";
+                                            var statusText = obra.Status == "em-andamento" ? "Em Andamento" : "Concluída";
+                                        }
+                                        <span class="badge @statusClass">@statusText</span>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private List<Obra> Obras = new();
+    private List<Funcionario> Funcionarios = new();
+    private bool Carregando = true;
+    private string Erro = "";
+
+    // Métricas calculadas
+    private int TotalFuncionarios => Funcionarios.Count;
+    private int FuncionariosAtivos => Funcionarios.Count(f => f.Status == "ativo");
+    private int ObrasAtivas => Obras.Count(o => o.Status == "em-andamento");
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            Carregando = true;
+            Erro = "";
+
+            // Carregar obras
+            Obras = await ApiService.GetObrasAsync();
+
+            // Carregar funcionários
+            Funcionarios = await ApiService.GetFuncionariosAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError($"Erro ao carregar dashboard: {ex.Message}");
+            Erro = $"Erro ao carregar dados: {ex.Message}";
+        }
+        finally
+        {
+            Carregando = false;
+        }
+    }
+}
