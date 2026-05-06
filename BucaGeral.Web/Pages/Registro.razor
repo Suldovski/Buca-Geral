@@ -1,0 +1,260 @@
+@page "/registro"
+@layout LoginLayout
+@using BucaGeral.Web.Services
+@inject ApiService ApiService
+@inject NavigationManager Navigation
+
+<div class="registro-container">
+    <div class="registro-card">
+        <div class="registro-header">
+            <h1>📝 Criar Conta</h1>
+            <p>Junte-se ao Buca Geral</p>
+        </div>
+
+        <EditForm Model="@registroModel" OnValidSubmit="@HandleRegistro">
+            <DataAnnotationsValidator />
+
+            <div class="form-group">
+                <label for="nome">Nome Completo</label>
+                <InputText id="nome" @bind-Value="registroModel.Nome" 
+                           placeholder="Seu nome" class="form-control" />
+                <ValidationMessage For="@(() => registroModel.Nome)" />
+            </div>
+
+            <div class="form-group">
+                <label for="login">Nome de Usuário</label>
+                <InputText id="login" @bind-Value="registroModel.Login" 
+                           placeholder="seu_usuario" class="form-control" />
+                <ValidationMessage For="@(() => registroModel.Login)" />
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email</label>
+                <InputEmail id="email" @bind-Value="registroModel.Email" 
+                            placeholder="seu@email.com" class="form-control" />
+                <ValidationMessage For="@(() => registroModel.Email)" />
+            </div>
+
+            <div class="form-group">
+                <label for="password">Senha</label>
+                <input type="password" id="password" @bind="registroModel.Senha" 
+                       placeholder="Crie uma senha segura" class="form-control" />
+            </div>
+
+            <div class="form-group">
+                <label for="confirm-password">Confirmar Senha</label>
+                <input type="password" id="confirm-password" @bind="confirmSenha" 
+                       placeholder="Confirme sua senha" class="form-control" />
+            </div>
+
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="alert alert-danger">
+                    @errorMessage
+                </div>
+            }
+
+            @if (!string.IsNullOrEmpty(successMessage))
+            {
+                <div class="alert alert-success">
+                    @successMessage
+                </div>
+            }
+
+            @if (isLoading)
+            {
+                <button type="button" class="btn btn-primary btn-block" disabled>
+                    <span class="spinner-border spinner-border-sm mr-2"></span>
+                    Criando conta...
+                </button>
+            }
+            else
+            {
+                <button type="submit" class="btn btn-primary btn-block">
+                    ✓ Registrar
+                </button>
+            }
+
+            <div class="form-footer">
+                <p>Já tem conta? <a href="/login">Faça login aqui</a></p>
+            </div>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    private RegistroRequest registroModel = new();
+    private string confirmSenha = "";
+    private string errorMessage = "";
+    private string successMessage = "";
+    private bool isLoading = false;
+
+    private async Task HandleRegistro()
+    {
+        try
+        {
+            errorMessage = "";
+            successMessage = "";
+
+            if (registroModel.Senha != confirmSenha)
+            {
+                errorMessage = "As senhas não coincidem.";
+                return;
+            }
+
+            if (registroModel.Senha.Length < 6)
+            {
+                errorMessage = "A senha deve ter no mínimo 6 caracteres.";
+                return;
+            }
+
+            isLoading = true;
+
+            var resultado = await ApiService.RegistroAsync(
+                registroModel.Email,
+                registroModel.Senha,
+                registroModel.Nome,
+                registroModel.Login
+            );
+
+            if (resultado?.Uid != null)
+            {
+                successMessage = "Conta criada com sucesso! Redirecionando para login...";
+                await Task.Delay(2000);
+                Navigation.NavigateTo("/login");
+            }
+            else
+            {
+                errorMessage = "Falha ao criar conta. Tente novamente.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Erro: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    public class RegistroRequest
+    {
+        public string Nome { get; set; }
+        public string Login { get; set; }
+        public string Email { get; set; }
+        public string Senha { get; set; }
+    }
+}
+
+<style>
+    .registro-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: var(--spacing-lg);
+    }
+
+    .registro-card {
+        background: white;
+        border-radius: var(--border-radius);
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        padding: var(--spacing-xl);
+        max-width: 450px;
+        width: 100%;
+    }
+
+    .registro-header {
+        text-align: center;
+        margin-bottom: var(--spacing-xl);
+    }
+
+    .registro-header h1 {
+        color: var(--primary);
+        margin: 0 0 var(--spacing-sm) 0;
+        font-size: 28px;
+    }
+
+    .registro-header p {
+        color: var(--gray-500);
+        margin: 0;
+        font-size: 14px;
+    }
+
+    .form-group {
+        margin-bottom: var(--spacing-md);
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 6px;
+        color: var(--dark);
+        font-weight: 500;
+        font-size: 14px;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 10px var(--spacing-md);
+        border: 1px solid var(--gray-300);
+        border-radius: var(--border-radius);
+        font-size: 14px;
+        transition: border-color 0.3s;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .btn-block {
+        width: 100%;
+        padding: var(--spacing-md);
+        margin-top: var(--spacing-lg);
+    }
+
+    .alert {
+        padding: var(--spacing-md);
+        border-radius: var(--border-radius);
+        margin-bottom: var(--spacing-lg);
+        font-size: 14px;
+    }
+
+    .alert-danger {
+        background-color: #f8d7da;
+        border: 1px solid #f5c6cb;
+        color: #721c24;
+    }
+
+    .alert-success {
+        background-color: #d4edda;
+        border: 1px solid #c3e6cb;
+        color: #155724;
+    }
+
+    .form-footer {
+        text-align: center;
+        margin-top: var(--spacing-lg);
+        padding-top: var(--spacing-lg);
+        border-top: 1px solid var(--gray-200);
+    }
+
+    .form-footer p {
+        margin: 0;
+        color: var(--gray-600);
+        font-size: 14px;
+    }
+
+    .form-footer a {
+        color: var(--primary);
+        text-decoration: none;
+        font-weight: 500;
+    }
+
+    .form-footer a:hover {
+        text-decoration: underline;
+    }
+</style>
