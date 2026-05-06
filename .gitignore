@@ -1,0 +1,59 @@
+# Arquivo .gitignore para projeto .NET + Blazor
+
+## Arquivos de compilação
+bin/
+obj/
+out/
+*.dll
+*.exe
+*.pdb
+
+## Visual Studio
+.vs/
+.vscode/
+*.sln.iml
+*.user
+*.userosscache
+*.sln.docstates
+
+## ReSharper
+.idea/
+*.sln.iml
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.DotSettings.user
+
+## Firebase
+firebase-config.json
+google-services.json
+
+## Ambiente
+.env
+.env.local
+.env.*.local
+
+## Logs
+*.log
+logs/
+
+## Arquivos de teste
+TestResults/
+.coverage/
+
+## Blazor WebAssembly
+BucaGeral.Web/wwwroot/.nuget/
+BucaGeral.Web/obj/Debug/net8.0/
+
+## Node modules (se houver)
+node_modules/
+package-lock.json
+yarn.lock
+
+## macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+## Windows
+Thumbs.db
+ehthumbs.db
