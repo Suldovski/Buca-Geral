@@ -26,6 +26,8 @@ _ReSharper*/
 ## Firebase
 firebase-config.json
 google-services.json
+firebase-adminsdk.json
+*.adminsdk.json
 
 ## Ambiente
 .env
