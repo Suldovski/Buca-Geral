@@ -1,4 +1,4 @@
-﻿import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+﻿import { QueryClient } from "@tanstack/react-query";
 import {
   Outlet, Link, createRootRouteWithContext, useRouter, useRouterState,
   HeadContent, Scripts,
@@ -63,22 +63,17 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 function RootComponent() {
-  const { queryClient } = Route.useRouteContext();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const isAuth = pathname === "/login";
 
-  return (
-    <QueryClientProvider client={queryClient}>
-      {isAuth ? (
+  return isAuth ? (
+    <Outlet />
+  ) : (
+    <div className="flex min-h-screen">
+      <AppSidebar />
+      <main className="flex-1 bg-background p-6 overflow-auto">
         <Outlet />
-      ) : (
-        <div className="flex min-h-screen">
-          <AppSidebar />
-          <main className="flex-1 bg-background p-6 overflow-auto">
-            <Outlet />
-          </main>
-        </div>
-      )}
-    </QueryClientProvider>
+      </main>
+    </div>
   );
 }
