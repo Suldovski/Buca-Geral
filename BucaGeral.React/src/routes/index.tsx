@@ -1,103 +1,84 @@
-﻿import { createFileRoute, Link } from "@tanstack/react-router";
-import { AppShell } from "@/components/AppShell";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+﻿import { createFileRoute } from "@tanstack/react-router";
 import { Building2, Users } from "lucide-react";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
-import { obrasMock, funcionariosMock } from "@/lib/mock-data";
+import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis } from "recharts";
+import { PageHeader } from "@/components/page-header";
+import { useObras, useFuncionarios } from "@/lib/store";
 
-export const Route = createFileRoute("/")({
-  component: Home,
-});
+export const Route = createFileRoute("/")({ component: Inicio });
 
-function Home() {
-  const stats = [
-    { label: "Obras", value: obrasMock.length, icon: Building2, to: "/obras" },
-    { label: "Funcionários", value: funcionariosMock.length, icon: Users, to: "/funcionarios" },
-  ];
-
-  // Contratações por mês (2026)
-  const ano = 2026;
-  const meses = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
-  const porMes = meses.map((mes, idx) => ({
-    mes,
-    contratados: funcionariosMock.filter(f => new Date(f.dataAdmissao).getFullYear() === ano && new Date(f.dataAdmissao).getMonth() === idx).length,
+function Inicio() {
+  const obras = useObras();
+  const funcionarios = useFuncionarios();
+  const meses = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
+  const chartData = meses.map((m, i) => ({
+    mes: m,
+    total: funcionarios.filter((f) => {
+      const [, mm, yyyy] = f.admissao.split("/");
+      return Number(mm) === i + 1 && yyyy === "2026";
+    }).length,
   }));
 
-  // Cargos mais frequentes
-  const cargos: Record<string, number> = {};
-  funcionariosMock.forEach(f => { cargos[f.cargo] = (cargos[f.cargo] || 0) + 1; });
-  const topCargos = Object.entries(cargos).map(([cargo, total]) => ({ cargo, total })).sort((a,b) => b.total - a.total).slice(0, 5);
+  const cargosCount = funcionarios.reduce<Record<string, number>>((acc, f) => {
+    acc[f.cargo] = (acc[f.cargo] || 0) + 1; return acc;
+  }, {});
+  const cargos = Object.entries(cargosCount).sort((a, b) => b[1] - a[1]);
+  const max = Math.max(1, ...cargos.map(([, c]) => c));
 
   return (
-    <AppShell>
-      <header className="mb-8">
-        <h1 className="text-3xl font-semibold tracking-tight">Início</h1>
-        <p className="text-muted-foreground">Visão geral do efetivo e obras.</p>
-      </header>
-
-      <section className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-        {stats.map((s) => (
-          <Link key={s.label} to={s.to}>
-            <Card className="border-border/60 transition-all hover:shadow-lg cursor-pointer">
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">{s.label}</p>
-                    <p className="text-4xl font-semibold mt-2">{s.value}</p>
-                  </div>
-                  <div className="size-12 rounded-full bg-primary/10 text-primary flex items-center justify-center">
-                    <s.icon className="size-6" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
-        ))}
-      </section>
+    <div>
+      <PageHeader title="Início" />
+      <div className="grid grid-cols-2 gap-4 mb-8">
+        <Card title="Obras" value={obras.length} icon={<Building2 className="h-8 w-8" />} />
+        <Card title="Funcionários" value={funcionarios.length} icon={<Users className="h-8 w-8" />} />
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Contratações por mês ({ano})</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={porMes}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="mes" stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                  <YAxis allowDecimals={false} stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                  <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
-                  <Bar dataKey="contratados" fill="hsl(var(--primary))" radius={[4,4,0,0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="rounded-lg border border-border bg-card p-6">
+          <h3 className="font-semibold mb-6">Funcionários contratados por mês (2026)</h3>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartData}>
+                <XAxis dataKey="mes" fontSize={12} />
+                <YAxis fontSize={12} allowDecimals={false} />
+                <Bar dataKey="total" fill="hsl(var(--primary))" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Funções com mais funcionários</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {topCargos.map(({ cargo, total }) => {
-              const max = topCargos[0]?.total || 1;
-              const pct = (total / max) * 100;
-              return (
-                <div key={cargo}>
-                  <div className="flex justify-between text-sm mb-1">
-                    <span className="font-medium">{cargo}</span>
-                    <span className="text-muted-foreground">{total}</span>
-                  </div>
-                  <div className="h-2 rounded-full bg-secondary overflow-hidden">
-                    <div className="h-full rounded-full bg-primary" style={{ width: `${pct}%` }} />
-                  </div>
+        <div className="rounded-lg border border-border bg-card p-6">
+          <h3 className="font-semibold mb-6">Funções com mais funcionários</h3>
+          <div className="space-y-4">
+            {cargos.map(([cargo, count]) => (
+              <div key={cargo}>
+                <div className="flex justify-between text-sm mb-2">
+                  <span>{cargo}</span>
+                  <span className="text-muted-foreground">{count}</span>
                 </div>
-              );
-            })}
-          </CardContent>
-        </Card>
+                <div className="h-2 rounded-full bg-secondary overflow-hidden">
+                  <div className="h-full bg-primary rounded-full" style={{ width: `${(count / max) * 100}%` }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
-    </AppShell>
+    </div>
+  );
+}
+
+function Card({ title, value, icon }: { title: string; value: number; icon: React.ReactNode }) {
+  return (
+    <div className="rounded-lg border border-border bg-card p-6">
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="text-sm text-muted-foreground">{title}</p>
+          <p className="text-3xl font-semibold mt-2">{value}</p>
+        </div>
+        <div className="text-primary opacity-50">
+          {icon}
+        </div>
+      </div>
+    </div>
   );
 }

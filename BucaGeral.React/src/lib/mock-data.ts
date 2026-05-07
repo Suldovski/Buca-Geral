@@ -2,9 +2,8 @@
   id: string;
   nome: string;
   localizacao: string;
-  dataInicio: string;
-  dataFim?: string;
-  ativo: boolean;
+  inicio: string;
+  status: "Ativa" | "Encerrada";
 };
 
 export type Funcionario = {
@@ -12,8 +11,8 @@ export type Funcionario = {
   nome: string;
   cargo: string;
   obraId: string;
-  dataAdmissao: string;
-  ativo: boolean;
+  admissao: string;
+  status: "Ativo" | "Inativo";
 };
 
 export type Usuario = {
@@ -21,30 +20,33 @@ export type Usuario = {
   nome: string;
   email: string;
   perfil: "Administrador" | "Operador" | "Visualizador";
-  ativo: boolean;
+  status: "Ativo" | "Inativo";
 };
 
-export const obrasMock: Obra[] = [
-  { id: "o1", nome: "Residencial Vista Mar", localizacao: "Santos, SP", dataInicio: "2024-03-12", ativo: true },
-  { id: "o2", nome: "Edifício Central Tower", localizacao: "São Paulo, SP", dataInicio: "2023-09-01", ativo: true },
-  { id: "o3", nome: "Galpão Logístico Norte", localizacao: "Campinas, SP", dataInicio: "2024-01-20", ativo: true },
-  { id: "o4", nome: "Reforma Sede Matriz", localizacao: "Rio de Janeiro, RJ", dataInicio: "2022-05-10", ativo: false },
+export const obras: Obra[] = [
+  { id: "1", nome: "Residencial Vista Mar", localizacao: "Santos, SP", inicio: "11/03/2024", status: "Ativa" },
+  { id: "2", nome: "Edifício Central Tower", localizacao: "São Paulo, SP", inicio: "31/08/2023", status: "Ativa" },
+  { id: "3", nome: "Galpão Logístico Norte", localizacao: "Campinas, SP", inicio: "19/01/2024", status: "Ativa" },
+  { id: "4", nome: "Reforma Sede Matriz", localizacao: "Rio de Janeiro, RJ", inicio: "09/05/2022", status: "Encerrada" },
 ];
 
-export const funcionariosMock: Funcionario[] = [
-  { id: "f1", nome: "Carlos Almeida", cargo: "Engenheiro Civil", obraId: "o1", dataAdmissao: "2024-03-15", ativo: true },
-  { id: "f2", nome: "Mariana Silva", cargo: "Mestre de Obras", obraId: "o1", dataAdmissao: "2024-04-02", ativo: true },
-  { id: "f3", nome: "João Pedro Santos", cargo: "Pedreiro", obraId: "o1", dataAdmissao: "2024-04-10", ativo: true },
-  { id: "f4", nome: "Ana Paula Costa", cargo: "Arquiteta", obraId: "o2", dataAdmissao: "2023-09-05", ativo: true },
-  { id: "f5", nome: "Roberto Lima", cargo: "Eletricista", obraId: "o2", dataAdmissao: "2023-10-18", ativo: true },
-  { id: "f6", nome: "Fernanda Rocha", cargo: "Encarregada", obraId: "o2", dataAdmissao: "2024-01-12", ativo: false },
-  { id: "f7", nome: "Lucas Pereira", cargo: "Operador de Máquinas", obraId: "o3", dataAdmissao: "2024-02-01", ativo: true },
-  { id: "f8", nome: "Patrícia Mendes", cargo: "Auxiliar Administrativo", obraId: "o3", dataAdmissao: "2024-02-20", ativo: true },
-  { id: "f9", nome: "Gustavo Henrique", cargo: "Pintor", obraId: "o4", dataAdmissao: "2022-06-15", ativo: false },
+export const funcionarios: Funcionario[] = [
+  { id: "1", nome: "Carlos Almeida", cargo: "Engenheiro Civil", obraId: "1", admissao: "14/01/2026", status: "Ativo" },
+  { id: "2", nome: "Mariana Silva", cargo: "Mestre de Obras", obraId: "1", admissao: "21/01/2026", status: "Ativo" },
+  { id: "3", nome: "João Pedro Santos", cargo: "Pedreiro", obraId: "1", admissao: "04/02/2026", status: "Ativo" },
+  { id: "4", nome: "Ana Paula Costa", cargo: "Engenheiro Civil", obraId: "2", admissao: "17/02/2026", status: "Ativo" },
+  { id: "5", nome: "Roberto Lima", cargo: "Eletricista", obraId: "2", admissao: "27/02/2026", status: "Ativo" },
+  { id: "6", nome: "Fernanda Rocha", cargo: "Pedreiro", obraId: "2", admissao: "03/03/2026", status: "Inativo" },
+  { id: "7", nome: "Lucas Pereira", cargo: "Pedreiro", obraId: "3", admissao: "11/03/2026", status: "Ativo" },
+  { id: "8", nome: "Patrícia Mendes", cargo: "Auxiliar Administrativo", obraId: "3", admissao: "19/03/2026", status: "Ativo" },
+  { id: "9", nome: "Gustavo Henrique", cargo: "Pintor", obraId: "4", admissao: "01/04/2026", status: "Inativo" },
+  { id: "10", nome: "Renata Souza", cargo: "Pedreiro", obraId: "1", admissao: "09/04/2026", status: "Ativo" },
+  { id: "11", nome: "Tiago Martins", cargo: "Eletricista", obraId: "3", admissao: "21/04/2026", status: "Ativo" },
+  { id: "12", nome: "Beatriz Andrade", cargo: "Pedreiro", obraId: "2", admissao: "05/05/2026", status: "Ativo" },
 ];
 
-export const usuariosMockInitial: Usuario[] = [
-  { id: "u1", nome: "Admin Master", email: "admin@bucagrans.com.br", perfil: "Administrador", ativo: true },
-  { id: "u2", nome: "Joana Engenheira", email: "joana@bucagrans.com.br", perfil: "Operador", ativo: true },
-  { id: "u3", nome: "Marcos Diretor", email: "marcos@bucagrans.com.br", perfil: "Visualizador", ativo: false },
+export const usuarios: Usuario[] = [
+  { id: "1", nome: "Admin Master", email: "admin@bucagrans.com.br", perfil: "Administrador", status: "Ativo" },
+  { id: "2", nome: "Joana Engenheira", email: "joana@bucagrans.com.br", perfil: "Operador", status: "Ativo" },
+  { id: "3", nome: "Marcos Diretor", email: "marcos@bucagrans.com.br", perfil: "Visualizador", status: "Inativo" },
 ];
