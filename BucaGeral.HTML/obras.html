@@ -2,24 +2,64 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Buca-Geral - Obras</title>
+    <title>Obras - Bucagrans</title>
     <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        .header { background: #0b2b40; }
+        .btn { background: #0b2b40; transition: 0.2s; }
+        .btn:hover { background: #1e5a6e; transform: translateY(-2px); }
+        .card { border-radius: 20px; }
+        table th { background: #e9ecef; color: #0b2b40; }
+        .modal-content { border-radius: 20px; }
+    </style>
 </head>
 <body>
-<div class="header"><div class="container" style="padding:0;"><h1>🏗️ Buca-Geral - Obras</h1><div class="menu"><a href="dashboard.html">Dashboard</a><a href="obras.html">Obras</a><a href="funcionarios.html">Funcionários</a><a href="index.html" style="background:#dc3545;">Sair</a></div></div></div>
-<div class="container"><div class="card"><h2>📋 Obras</h2><button class="btn" onclick="abrirModal()">+ Nova Obra</button><hr style="margin:1rem 0"><table id="tabela"><thead><tr><th>Nome</th><th>Localização</th><th>Data Início</th><th>Ações</th></tr></thead><tbody></tbody></table></div></div>
-<div id="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); justify-content:center; align-items:center;"><div style="background:white; padding:2rem; border-radius:16px; width:500px;"><span style="float:right; cursor:pointer" onclick="fecharModal()">&times;</span><h3 id="modalTitle">Nova Obra</h3><form id="obraForm"><input type="hidden" id="id"><div class="form-group"><label>Nome</label><input type="text" id="nome" required></div><div class="form-group"><label>Localização</label><input type="text" id="localizacao" required></div><div class="form-group"><label>Data Início</label><input type="date" id="dataInicio" required></div><button type="submit" class="btn">Salvar</button></form></div></div>
+<div class="header">
+    <div style="display: flex; align-items: center;">
+        <img src="logo.png" alt="Logo" class="logo-img" style="height: 50px; margin-right: 10px;" onerror="this.style.display='none'">
+        <div class="logo">Bucagrans Construtora de Obras SA</div>
+    </div>
+    <div class="menu">
+        <a href="home.html">Home</a>
+        <a href="obras.html">Obras</a>
+        <a href="rh-matriz.html">RH Matriz</a>
+        <a href="usuarios.html">Usuários</a>
+        <a href="index.html">Sair</a>
+    </div>
+</div>
+<div class="container">
+    <div class="card">
+        <h2>📋 Obras</h2>
+        <button class="btn" onclick="abrirModal()">➕ Nova Obra</button>
+        <hr>
+        <table id="tabelaObras">
+            <thead><tr><th>Nome</th><th>Localização</th><th>Funcionários</th><th>Ações</th></tr></thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</div>
+<div id="modal" class="modal"><div class="modal-content"><span class="close" onclick="fecharModal()">&times;</span><h3 id="modalTitle">Nova Obra</h3><form id="obraForm"><input type="hidden" id="id"><div class="form-group"><label>Nome</label><input type="text" id="nome" required></div><div class="form-group"><label>Localização</label><input type="text" id="localizacao" required></div><button type="submit" class="btn">Salvar</button></form></div></div>
 <script>
-    const apiUrl = 'http://localhost:5000/api/obras';
-    let obras = [];
-    async function carregar() { const res = await fetch(apiUrl); obras = await res.json(); const tbody = document.querySelector('#tabela tbody'); tbody.innerHTML = ''; obras.forEach(o => { const tr = document.createElement('tr'); tr.innerHTML = `<td>${o.nome}</td><td>${o.localizacao}</td><td>${new Date(o.dataInicio).toLocaleDateString()}</td><td><button class="btn btn-warning btn-sm" onclick="editar('${o.id}')">Editar</button> <button class="btn btn-danger btn-sm" onclick="excluir('${o.id}')">Excluir</button></td>`; tbody.appendChild(tr); }); }
-    function abrirModal(id=null) { document.getElementById('modal').style.display = 'flex'; if(id){ const o = obras.find(x=>x.id===id); if(o){ document.getElementById('modalTitle').innerText='Editar Obra'; document.getElementById('id').value=o.id; document.getElementById('nome').value=o.nome; document.getElementById('localizacao').value=o.localizacao; document.getElementById('dataInicio').value=o.dataInicio.split('T')[0]; } }else{ document.getElementById('modalTitle').innerText='Nova Obra'; document.getElementById('obraForm').reset(); document.getElementById('id').value=''; } }
-    function fecharModal() { document.getElementById('modal').style.display = 'none'; }
-    async function salvar(e){ e.preventDefault(); const id = document.getElementById('id').value; const obra = { nome: document.getElementById('nome').value, localizacao: document.getElementById('localizacao').value, dataInicio: document.getElementById('dataInicio').value }; const method = id ? 'PUT' : 'POST'; const url = id ? `${apiUrl}/${id}` : apiUrl; await fetch(url, { method, headers:{'Content-Type':'application/json'}, body:JSON.stringify(obra) }); fecharModal(); carregar(); }
-    async function editar(id){ abrirModal(id); }
-    async function excluir(id){ if(confirm('Excluir obra?')){ await fetch(`${apiUrl}/${id}`, { method:'DELETE' }); carregar(); } }
-    document.getElementById('obraForm').addEventListener('submit', salvar);
-    carregar();
+const API = 'http://localhost:5000/api';
+let obras = [], todosFuncionarios = [];
+async function carregarDados() {
+    [obras, todosFuncionarios] = await Promise.all([fetch(`${API}/obras`).then(r=>r.json()), fetch(`${API}/funcionarios`).then(r=>r.json())]);
+    const tbody = document.querySelector('#tabelaObras tbody');
+    tbody.innerHTML = '';
+    obras.forEach(o => {
+        const qtdFunc = todosFuncionarios.filter(f => f.obraId === o.id).length;
+        tbody.innerHTML += `<tr><td style="cursor:pointer" onclick="verObra('${o.id}')"><strong>${o.nome}</strong></td><td onclick="verObra('${o.id}')">${o.localizacao}</td><td onclick="verObra('${o.id}')">${qtdFunc}</td><td><button class="btn btn-sm btn-warning" onclick="editar('${o.id}')">✏️ Editar</button> <button class="btn btn-sm btn-danger" onclick="excluirObra('${o.id}')">🗑️ Excluir</button> <a href="obra-detalhe.html?id=${o.id}" class="btn btn-sm btn-success">👥 Ver Funcionários</a></td></tr>`;
+    });
+}
+function verObra(id) { window.location.href = `obra-detalhe.html?id=${id}`; }
+function abrirModal(id=null){ document.getElementById('modal').style.display='flex'; if(id){ const o = obras.find(x=>x.id===id); if(o){ document.getElementById('modalTitle').innerText='Editar Obra'; document.getElementById('id').value=o.id; document.getElementById('nome').value=o.nome; document.getElementById('localizacao').value=o.localizacao; } }else{ document.getElementById('modalTitle').innerText='Nova Obra'; document.getElementById('obraForm').reset(); document.getElementById('id').value=''; } }
+function fecharModal(){ document.getElementById('modal').style.display='none'; }
+async function salvar(e){ e.preventDefault(); const id = document.getElementById('id').value; const obra = { nome: document.getElementById('nome').value, localizacao: document.getElementById('localizacao').value }; const method = id ? 'PUT' : 'POST'; const url = id ? `${API}/obras/${id}` : `${API}/obras`; const res = await fetch(url, { method, headers:{'Content-Type':'application/json'}, body:JSON.stringify(obra) }); if(res.ok){ Swal.fire('Sucesso','Obra salva!','success'); fecharModal(); carregarDados(); } else Swal.fire('Erro','Não foi possível salvar','error'); }
+async function editar(id){ const o = obras.find(x=>x.id===id); if(o) abrirModal(id); }
+async function excluirObra(id){ const result = await Swal.fire({ title:'Excluir obra?', text:'Todos os funcionários também serão removidos!', icon:'warning', showCancelButton:true }); if(result.isConfirmed){ await fetch(`${API}/obras/${id}`, { method:'DELETE' }); carregarDados(); Swal.fire('Excluído!','Obra removida.','success'); } }
+document.getElementById('obraForm').addEventListener('submit', salvar);
+carregarDados();
 </script>
 </body>
 </html>

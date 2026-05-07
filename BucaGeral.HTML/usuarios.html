@@ -1,0 +1,57 @@
+﻿<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Usuários - Buca-Geral</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+<div class="header">
+    <div class="logo">🏗️ Buca-Geral</div>
+    <div class="menu">
+        <a href="home.html">Home</a>
+        <a href="obras.html">Obras</a>
+        <a href="rh-matriz.html">RH Matriz</a>
+        <a href="usuarios.html">Usuários</a>
+        <a href="index.html">Sair</a>
+    </div>
+</div>
+<div class="container">
+    <div class="card">
+        <h2>👥 Usuários do Sistema</h2>
+        <button class="btn" onclick="abrirModal()">➕ Novo Usuário</button>
+        <hr>
+        <table id="tabelaUsuarios"><thead><tr><th>E-mail</th><th>Nome</th><th>UID</th><th>Ações</th></tr></thead><tbody></tbody></table>
+    </div>
+</div>
+<div id="modal" class="modal"><div class="modal-content"><span class="close" onclick="fecharModal()">&times;</span><h3>Novo Usuário</h3><form id="userForm"><div class="form-group"><label>Nome</label><input type="text" id="nome" required></div><div class="form-group"><label>E-mail</label><input type="email" id="email" required></div><div class="form-group"><label>Senha</label><input type="password" id="senha" required></div><button type="submit" class="btn">Salvar</button></form></div></div>
+<script>
+const API = 'http://localhost:5000/api/usuarios';
+async function carregarUsuarios() {
+    const res = await fetch(API);
+    const users = await res.json();
+    const tbody = document.querySelector('#tabelaUsuarios tbody');
+    tbody.innerHTML = '';
+    users.forEach(u => {
+        tbody.innerHTML += `<tr><td>${u.email}</td><td>${u.displayName || '-'}</td><td>${u.uid.substring(0,8)}...</td><td><button class="btn btn-sm btn-danger" onclick="excluirUsuario('${u.uid}')">Excluir</button></td></tr>`;
+    });
+}
+function abrirModal() { document.getElementById('modal').style.display = 'flex'; document.getElementById('userForm').reset(); }
+function fecharModal() { document.getElementById('modal').style.display = 'none'; }
+async function salvarUsuario(e) {
+    e.preventDefault();
+    const user = { nome: document.getElementById('nome').value, email: document.getElementById('email').value, senha: document.getElementById('senha').value };
+    const res = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(user) });
+    if(res.ok){ Swal.fire('Sucesso','Usuário criado!','success'); fecharModal(); carregarUsuarios(); }
+    else Swal.fire('Erro','Não foi possível criar','error');
+}
+async function excluirUsuario(uid) {
+    const result = await Swal.fire({ title:'Excluir usuário?', icon:'warning', showCancelButton:true });
+    if(result.isConfirmed){ await fetch(`${API}/${uid}`, { method:'DELETE' }); carregarUsuarios(); Swal.fire('Excluído!','','success'); }
+}
+document.getElementById('userForm').addEventListener('submit', salvarUsuario);
+carregarUsuarios();
+</script>
+</body>
+</html>

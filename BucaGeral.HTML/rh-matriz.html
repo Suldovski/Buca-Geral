@@ -1,0 +1,85 @@
+﻿<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>RH Matriz - Bucagrans</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        .header { background: #0b2b40; }
+        .btn { background: #0b2b40; }
+        .btn:hover { background: #1e5a6e; }
+        .card { border-radius: 20px; }
+        table th { background: #e9ecef; color: #0b2b40; }
+        .filtros { background: #f8f9fa; padding: 20px; border-radius: 20px; margin-bottom: 25px; }
+    </style>
+</head>
+<body>
+<div class="header">
+    <div style="display: flex; align-items: center;">
+        <img src="logo.png" alt="Logo" class="logo-img" style="height: 50px; margin-right: 10px;" onerror="this.style.display='none'">
+        <div class="logo">Bucagrans Construtora de Obras SA</div>
+    </div>
+    <div class="menu">
+        <a href="home.html">Home</a>
+        <a href="obras.html">Obras</a>
+        <a href="rh-matriz.html">RH Matriz</a>
+        <a href="usuarios.html">Usuários</a>
+        <a href="index.html">Sair</a>
+    </div>
+</div>
+<div class="container">
+    <div class="card">
+        <h2>👥 RH Matriz - Todos os Funcionários</h2>
+        <div class="filtros">
+            <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                <div class="form-group" style="flex:1;"><label>🔍 Buscar</label><input type="text" id="searchInput" placeholder="Nome, cargo ou obra..."></div>
+                <div class="form-group" style="flex:1;"><label>🏗️ Filtrar por obra</label><select id="filtroObra"><option value="">Todas as obras</option></select></div>
+            </div>
+        </div>
+        <table id="tabelaFunc">
+            <thead><tr><th>Nome</th><th>Cargo</th><th>Obra</th><th>Admissão</th><th>Ações</th></tr></thead>
+            <tbody></tbody>
+        </table>
+    </div>
+    <div class="card" style="margin-top: 30px;">
+        <h3>📊 Funcionários por Obra</h3>
+        <canvas id="graficoMatriz" style="height: 300px; width: 100%;"></canvas>
+    </div>
+</div>
+<script>
+const API = 'http://localhost:5000/api';
+let funcionarios = [], obras = [], graficoMatriz;
+async function carregarDados() {
+    [funcionarios, obras] = await Promise.all([fetch(`${API}/funcionarios`).then(r=>r.json()), fetch(`${API}/obras`).then(r=>r.json())]);
+    const select = document.getElementById('filtroObra'); select.innerHTML = '<option value="">Todas as obras</option>';
+    obras.forEach(o => { select.innerHTML += `<option value="${o.id}">${o.nome}</option>`; });
+    atualizarGrafico();
+    renderizar();
+}
+function atualizarGrafico() {
+    const labels = obras.map(o => o.nome);
+    const data = obras.map(o => funcionarios.filter(f => f.obraId === o.id).length);
+    if(graficoMatriz) graficoMatriz.destroy();
+    graficoMatriz = new Chart(document.getElementById('graficoMatriz'), { type: 'bar', data: { labels, datasets: [{ label: 'Qtd. Funcionários', data, backgroundColor: '#0b2b40', borderRadius: 8 }] }, options: { responsive: true, maintainAspectRatio: true } });
+}
+function renderizar() {
+    const busca = document.getElementById('searchInput').value.toLowerCase();
+    const obraId = document.getElementById('filtroObra').value;
+    const filtrados = funcionarios.filter(f => (!obraId || f.obraId === obraId) && (f.nome.toLowerCase().includes(busca) || f.cargo.toLowerCase().includes(busca) || (obras.find(o=>o.id===f.obraId)?.nome||'').toLowerCase().includes(busca)));
+    const tbody = document.querySelector('#tabelaFunc tbody');
+    tbody.innerHTML = '';
+    filtrados.forEach(f => {
+        const obraNome = obras.find(o => o.id === f.obraId)?.nome || 'N/A';
+        tbody.innerHTML += `<tr><td>${f.nome}</td><td>${f.cargo}</td><td>${obraNome}</td><td>${new Date(f.dataAdmissao).toLocaleDateString()}</td><td><button class="btn btn-sm btn-warning" onclick="editarFunc('${f.id}')">Editar</button> <button class="btn btn-sm btn-danger" onclick="excluirFunc('${f.id}')">Excluir</button></td></tr>`;
+    });
+}
+async function editarFunc(id){ const f = funcionarios.find(x=>x.id===id); if(f) window.location.href = `obra-detalhe.html?id=${f.obraId}`; }
+async function excluirFunc(id){ const result = await Swal.fire({ title:'Excluir funcionário?', icon:'warning', showCancelButton:true }); if(result.isConfirmed){ await fetch(`${API}/funcionarios/${id}`, { method:'DELETE' }); carregarDados(); Swal.fire('Excluído!','','success'); } }
+document.getElementById('searchInput').addEventListener('input', renderizar);
+document.getElementById('filtroObra').addEventListener('change', renderizar);
+carregarDados();
+</script>
+</body>
+</html>

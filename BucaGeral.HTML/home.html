@@ -1,0 +1,78 @@
+﻿<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Bucagrans - Home</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        /* Ajustes adicionais para profissionalismo */
+        .logo-img { height: 50px; margin-right: 10px; vertical-align: middle; }
+        .stats .stat-card { background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%); border-radius: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.05); transition: transform 0.2s; }
+        .stats .stat-card:hover { transform: translateY(-5px); }
+        .graficos-container { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin-bottom: 30px; }
+        .graficos-container .card { border-radius: 20px; }
+        .card-titulo { font-size: 1.3rem; font-weight: 600; color: #1e3c72; border-left: 5px solid #2a5298; padding-left: 15px; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+<div class="header">
+    <div style="display: flex; align-items: center;">
+        <img src="logo.png" alt="Logo" class="logo-img" onerror="this.style.display='none'">
+        <div class="logo">Bucagrans Construtora de Obras SA</div>
+    </div>
+    <div class="menu">
+        <a href="home.html">Home</a>
+        <a href="obras.html">Obras</a>
+        <a href="rh-matriz.html">RH Matriz</a>
+        <a href="usuarios.html">Usuários</a>
+        <a href="index.html" id="sairBtn">Sair</a>
+    </div>
+</div>
+<div class="container">
+    <div class="stats" style="margin-bottom: 40px;">
+        <div class="stat-card"><div class="stat-number" id="totalObras">-</div><div class="stat-label">Total de Obras</div></div>
+        <div class="stat-card"><div class="stat-number" id="totalFuncionarios">-</div><div class="stat-label">Total de Funcionários</div></div>
+    </div>
+
+    <div class="graficos-container">
+        <div class="card"><div class="card-titulo">📊 Funcionários por Obra</div><canvas id="graficoObras" style="height: 300px; width: 100%;"></canvas></div>
+        <div class="card"><div class="card-titulo">🥧 Distribuição por Cargo</div><canvas id="graficoCargos" style="height: 300px; width: 100%;"></canvas></div>
+    </div>
+
+    <div class="card"><div class="card-titulo">📈 Evolução de Admissões (últimos 6 meses)</div><canvas id="graficoEvolucao" style="height: 300px; width: 100%;"></canvas></div>
+</div>
+<script>
+const API = 'http://localhost:5000/api';
+let graficoObras, graficoCargos, graficoEvolucao;
+
+async function carregarStats() {
+    const [obras, funcs] = await Promise.all([fetch(`${API}/obras`).then(r=>r.json()), fetch(`${API}/funcionarios`).then(r=>r.json())]);
+    document.getElementById('totalObras').innerText = obras.length;
+    document.getElementById('totalFuncionarios').innerText = funcs.length;
+
+    // Gráfico Obras
+    const labelsObras = obras.map(o => o.nome);
+    const dataObras = obras.map(o => funcs.filter(f => f.obraId === o.id).length);
+    if(graficoObras) graficoObras.destroy();
+    graficoObras = new Chart(document.getElementById('graficoObras'), { type: 'bar', data: { labels: labelsObras, datasets: [{ label: 'Funcionários', data: dataObras, backgroundColor: '#2a5298', borderRadius: 8 }] }, options: { responsive: true, maintainAspectRatio: true } });
+
+    // Gráfico Cargos
+    const cargos = {};
+    funcs.forEach(f => { cargos[f.cargo] = (cargos[f.cargo] || 0) + 1; });
+    if(graficoCargos) graficoCargos.destroy();
+    graficoCargos = new Chart(document.getElementById('graficoCargos'), { type: 'pie', data: { labels: Object.keys(cargos), datasets: [{ data: Object.values(cargos), backgroundColor: ['#2a5298','#28a745','#ffc107','#dc3545','#17a2b8','#6c757d'] }] }, options: { responsive: true } });
+
+    // Evolução últimos 6 meses
+    const meses = [];
+    for(let i=5;i>=0;i--) { const d = new Date(); d.setMonth(d.getMonth() - i); meses.push(d.toLocaleDateString('pt-BR',{month:'short',year:'numeric'})); }
+    const qtdMeses = meses.map(m => funcs.filter(f => new Date(f.dataAdmissao).toLocaleDateString('pt-BR',{month:'short',year:'numeric'}) === m).length);
+    if(graficoEvolucao) graficoEvolucao.destroy();
+    graficoEvolucao = new Chart(document.getElementById('graficoEvolucao'), { type: 'line', data: { labels: meses, datasets: [{ label: 'Novos funcionários', data: qtdMeses, borderColor: '#2a5298', backgroundColor: 'rgba(42,82,152,0.1)', fill: true, tension: 0.3 }] } });
+}
+document.getElementById('sairBtn')?.addEventListener('click', (e) => { e.preventDefault(); localStorage.clear(); window.location.href='index.html'; });
+carregarStats();
+</script>
+</body>
+</html>
