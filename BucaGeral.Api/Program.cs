@@ -1,34 +1,31 @@
-var builder = WebApplicationBuilder.CreateBuilder(args);
+﻿using BucaGeral.Api.Services;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
-// Adicionar serviços
+var builder = WebApplication.CreateBuilder(args);
+
 builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// CORS configurado para Blazor local e produção
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowBlazor", builder =>
+    options.AddPolicy("BlazorWasm", policy =>
     {
-        builder
-            .WithOrigins("https://localhost:7000", "https://localhost:7001")
-            .AllowAnyMethod()
-            .AllowAnyHeader();
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
     });
 });
 
+builder.Services.AddSingleton<FirebaseService>();
+
 var app = builder.Build();
 
-// Pipeline
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+app.UseSwagger();
+app.UseSwaggerUI();
 
-app.UseHttpsRedirection();
-app.UseCors("AllowBlazor");
-app.UseAuthorization();
+app.UseCors("BlazorWasm");
 app.MapControllers();
 
 app.Run();

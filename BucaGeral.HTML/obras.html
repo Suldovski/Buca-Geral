@@ -1,0 +1,25 @@
+﻿<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Buca-Geral - Obras</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="header"><div class="container" style="padding:0;"><h1>🏗️ Buca-Geral - Obras</h1><div class="menu"><a href="dashboard.html">Dashboard</a><a href="obras.html">Obras</a><a href="funcionarios.html">Funcionários</a><a href="index.html" style="background:#dc3545;">Sair</a></div></div></div>
+<div class="container"><div class="card"><h2>📋 Obras</h2><button class="btn" onclick="abrirModal()">+ Nova Obra</button><hr style="margin:1rem 0"><table id="tabela"><thead><tr><th>Nome</th><th>Localização</th><th>Data Início</th><th>Ações</th></tr></thead><tbody></tbody></table></div></div>
+<div id="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); justify-content:center; align-items:center;"><div style="background:white; padding:2rem; border-radius:16px; width:500px;"><span style="float:right; cursor:pointer" onclick="fecharModal()">&times;</span><h3 id="modalTitle">Nova Obra</h3><form id="obraForm"><input type="hidden" id="id"><div class="form-group"><label>Nome</label><input type="text" id="nome" required></div><div class="form-group"><label>Localização</label><input type="text" id="localizacao" required></div><div class="form-group"><label>Data Início</label><input type="date" id="dataInicio" required></div><button type="submit" class="btn">Salvar</button></form></div></div>
+<script>
+    const apiUrl = 'http://localhost:5000/api/obras';
+    let obras = [];
+    async function carregar() { const res = await fetch(apiUrl); obras = await res.json(); const tbody = document.querySelector('#tabela tbody'); tbody.innerHTML = ''; obras.forEach(o => { const tr = document.createElement('tr'); tr.innerHTML = `<td>${o.nome}</td><td>${o.localizacao}</td><td>${new Date(o.dataInicio).toLocaleDateString()}</td><td><button class="btn btn-warning btn-sm" onclick="editar('${o.id}')">Editar</button> <button class="btn btn-danger btn-sm" onclick="excluir('${o.id}')">Excluir</button></td>`; tbody.appendChild(tr); }); }
+    function abrirModal(id=null) { document.getElementById('modal').style.display = 'flex'; if(id){ const o = obras.find(x=>x.id===id); if(o){ document.getElementById('modalTitle').innerText='Editar Obra'; document.getElementById('id').value=o.id; document.getElementById('nome').value=o.nome; document.getElementById('localizacao').value=o.localizacao; document.getElementById('dataInicio').value=o.dataInicio.split('T')[0]; } }else{ document.getElementById('modalTitle').innerText='Nova Obra'; document.getElementById('obraForm').reset(); document.getElementById('id').value=''; } }
+    function fecharModal() { document.getElementById('modal').style.display = 'none'; }
+    async function salvar(e){ e.preventDefault(); const id = document.getElementById('id').value; const obra = { nome: document.getElementById('nome').value, localizacao: document.getElementById('localizacao').value, dataInicio: document.getElementById('dataInicio').value }; const method = id ? 'PUT' : 'POST'; const url = id ? `${apiUrl}/${id}` : apiUrl; await fetch(url, { method, headers:{'Content-Type':'application/json'}, body:JSON.stringify(obra) }); fecharModal(); carregar(); }
+    async function editar(id){ abrirModal(id); }
+    async function excluir(id){ if(confirm('Excluir obra?')){ await fetch(`${apiUrl}/${id}`, { method:'DELETE' }); carregar(); } }
+    document.getElementById('obraForm').addEventListener('submit', salvar);
+    carregar();
+</script>
+</body>
+</html>

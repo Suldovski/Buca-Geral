@@ -1,0 +1,73 @@
+﻿<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Buca-Geral - Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="header">
+    <div class="container" style="padding: 0;">
+        <h1>🏗️ Buca-Geral</h1>
+        <p>Sistema de Gestão de RH - Multi Obras</p>
+        <div class="menu">
+            <a href="dashboard.html">Dashboard</a>
+            <a href="obras.html">Obras</a>
+            <a href="funcionarios.html">Funcionários</a>
+            <a href="index.html" style="background: #dc3545;">Sair</a>
+        </div>
+    </div>
+</div>
+<div class="container">
+    <div class="card">
+        <h3>📋 Obras</h3>
+        <p>Gerencie todas as obras cadastradas no sistema</p>
+        <a href="obras.html" class="btn">Acessar Obras</a>
+    </div>
+    <div class="card">
+        <h3>👥 Funcionários</h3>
+        <p>Gerencie os funcionários vinculados às obras</p>
+        <a href="funcionarios.html" class="btn">Acessar Funcionários</a>
+    </div>
+    <div class="card">
+        <h3>📊 Relatórios</h3>
+        <p>Exportar dados consolidados em Excel</p>
+        <button id="btnExportar" class="btn btn-success">📥 Exportar Excel</button>
+        <hr style="margin: 1rem 0;">
+        <h4>📤 Importar dados (Excel)</h4>
+        <p>Envie um arquivo .xlsx com as abas "Obras" e "Funcionarios"</p>
+        <input type="file" id="fileImport" accept=".xlsx">
+        <button id="btnImportar" class="btn btn-primary" style="margin-top: 0.5rem;">Importar</button>
+        <div id="importStatus" style="margin-top: 0.5rem;"></div>
+    </div>
+</div>
+<script>
+    document.getElementById('btnExportar').addEventListener('click', async () => {
+        window.location.href = 'http://localhost:5000/api/relatorios/exportar';
+    });
+
+    document.getElementById('btnImportar').addEventListener('click', async () => {
+        const fileInput = document.getElementById('fileImport');
+        if (!fileInput.files.length) {
+            alert('Selecione um arquivo Excel primeiro');
+            return;
+        }
+        const formData = new FormData();
+        formData.append('arquivo', fileInput.files[0]);
+        const statusDiv = document.getElementById('importStatus');
+        statusDiv.innerText = 'Importando...';
+        try {
+            const response = await fetch('http://localhost:5000/api/relatorios/importar', {
+                method: 'POST',
+                body: formData
+            });
+            const result = await response.json();
+            statusDiv.innerText = result.mensagem || 'Importação concluída!';
+            alert('Importação finalizada!');
+        } catch (error) {
+            statusDiv.innerText = 'Erro: ' + error.message;
+        }
+    });
+</script>
+</body>
+</html>

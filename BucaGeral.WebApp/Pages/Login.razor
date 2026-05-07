@@ -1,0 +1,53 @@
+﻿@page "/login"
+
+<h1>Login</h1>
+<p>Digite suas credenciais</p>
+
+<EditForm OnValidSubmit="@HandleLogin">
+    <div>
+        <label>Email:</label>
+        <InputText @bind-Value="email" />
+    </div>
+    <div>
+        <label>Senha:</label>
+        <InputText type="password" @bind-Value="senha" />
+    </div>
+    <button type="submit">Entrar</button>
+</EditForm>
+
+@if (!string.IsNullOrEmpty(erro))
+{
+    <div style="color:red">@erro</div>
+}
+
+@code {
+    private string email = "";
+    private string senha = "";
+    private string erro = "";
+
+    private async Task HandleLogin()
+    {
+        erro = "";
+        try
+        {
+            var http = new HttpClient();
+            var response = await http.PostAsJsonAsync("http://localhost:5000/api/Auth/login", 
+                new { Email = email, Senha = senha });
+            
+            if (response.IsSuccessStatusCode)
+            {
+                Navigation.NavigateTo("/");
+            }
+            else
+            {
+                erro = "Usuário ou senha inválidos";
+            }
+        }
+        catch
+        {
+            erro = "Erro de conexão com a API";
+        }
+    }
+    
+    [Inject] private NavigationManager Navigation { get; set; }
+}

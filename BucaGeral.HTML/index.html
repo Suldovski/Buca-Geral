@@ -1,0 +1,57 @@
+﻿<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Buca-Geral - Login</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .login-container { max-width: 400px; margin: 80px auto; }
+        .login-card { background: white; border-radius: 24px; padding: 2rem; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        .logo { text-align: center; font-size: 48px; margin-bottom: 1rem; }
+        h2 { text-align: center; margin-bottom: 0.5rem; }
+    </style>
+</head>
+<body>
+<div class="container login-container">
+    <div class="login-card">
+        <div class="logo">🏗️</div>
+        <h2>Buca-Geral</h2>
+        <p style="text-align: center; margin-bottom: 2rem;">Sistema de Gestão de RH</p>
+        <form id="loginForm">
+            <div class="form-group">
+                <label>E-mail</label>
+                <input type="email" id="email" value="teste@email.com" required>
+            </div>
+            <div class="form-group">
+                <label>Senha</label>
+                <input type="password" id="senha" value="123456" required>
+            </div>
+            <button type="submit" class="btn" style="width:100%; background: #2a5298;">Entrar</button>
+        </form>
+        <div id="msg" style="margin-top: 1rem; text-align: center; color: red;"></div>
+    </div>
+</div>
+<script>
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('email').value;
+        const senha = document.getElementById('senha').value;
+        try {
+            const res = await fetch('http://localhost:5000/api/Auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, senha })
+            });
+            if (res.ok) {
+                localStorage.setItem('user_email', email);
+                window.location.href = 'dashboard.html';
+            } else {
+                document.getElementById('msg').innerText = 'E-mail ou senha inválidos';
+            }
+        } catch (err) {
+            document.getElementById('msg').innerText = 'Erro de conexão com a API';
+        }
+    });
+</script>
+</body>
+</html>
