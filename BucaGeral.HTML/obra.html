@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Detalhe da obra · Bucagrans</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app">
+    <div id="sidebar-slot"></div>
+    <main id="detalhe">
+      <a class="back-link" href="obras.html">? Voltar para obras</a>
+      <div class="page-header">
+        <h1 id="titulo">Obra</h1>
+        <button class="btn" onclick="openDialog('dlg-func')">+ Novo funcionário</button>
+      </div>
+      <div class="info-grid">
+        <div class="card info-card"><div class="label">Localização</div><div class="value" id="info-loc">—</div></div>
+        <div class="card info-card"><div class="label">Início</div><div class="value" id="info-inicio">—</div></div>
+        <div class="card info-card"><div class="label">Efetivo ativo</div><div class="value" id="info-efetivo">—</div></div>
+      </div>
+      <div class="card" style="margin-bottom:18px;display:flex;justify-content:space-between;align-items:center">
+        <span style="color:var(--muted)">Status</span>
+        <span id="info-status"></span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Nome</th><th>Cargo</th><th>Admissão</th><th>Status</th></tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+  <div class="dialog-back" id="dlg-func">
+    <div class="dialog">
+      <h2>Novo funcionário</h2>
+      <form onsubmit="submitNovoFuncObra(event)">
+        <input type="hidden" name="obraId" id="obra-id-fixo" />
+        <div class="field"><label>Nome</label><input class="input" name="nome" required /></div>
+        <div class="field"><label>Cargo</label><input class="input" name="cargo" required placeholder="Ex: Pedreiro" /></div>
+        <div class="row-2">
+          <div class="field"><label>Admissão</label><input class="input" name="admissao" id="func-adm" placeholder="dd/mm/aaaa" /></div>
+          <div class="field"><label>Status</label>
+            <select class="select" name="status"><option>Ativo</option><option>Inativo</option></select>
+          </div>
+        </div>
+        <div class="dialog-foot">
+          <button type="button" class="btn btn-outline" onclick="closeDialog('dlg-func')">Cancelar</button>
+          <button type="submit" class="btn">Criar funcionário</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  <script src="/app.js"></script>
+  <script>
+    BG.mountLayout("obras");
+    document.getElementById("func-adm").value = BG.todayBR();
+    BG.renderObraDetalhe();
+  </script>
+</body>
+</html>

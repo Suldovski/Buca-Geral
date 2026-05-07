@@ -7,7 +7,7 @@ import { StatusBadge } from "@/components/status-badge";
 import { NovaObraDialog } from "@/components/nova-obra-dialog";
 import { useObras, useFuncionarios } from "@/lib/store";
 
-export const Route = createFileRoute("/obras")({ component: ObrasPage });
+export const Route = createFileRoute("/obras/")({ component: ObrasPage });
 
 function ObrasPage() {
   const obras = useObras();

@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -25,7 +25,10 @@ export function NovoFuncionarioDialog({ obraIdFixo }: { obraIdFixo?: string }) {
     e.preventDefault();
     if (!nome || !cargo || !obraId) return;
     addFuncionario({ nome, cargo, obraId, admissao, status });
-    setNome(""); setCargo(""); setAdmissao(todayBR()); setStatus("Ativo");
+    setNome("");
+    setCargo("");
+    setAdmissao(todayBR());
+    setStatus("Ativo");
     if (!obraIdFixo) setObraId(obras[0]?.id ?? "");
     setOpen(false);
   };
@@ -34,8 +37,7 @@ export function NovoFuncionarioDialog({ obraIdFixo }: { obraIdFixo?: string }) {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button>
-          <Plus className="h-4 w-4 mr-2" />
-          Novo funcionário
+          <Plus className="size-4 mr-2" /> Novo funcionário
         </Button>
       </DialogTrigger>
       <DialogContent>
@@ -44,19 +46,19 @@ export function NovoFuncionarioDialog({ obraIdFixo }: { obraIdFixo?: string }) {
         </DialogHeader>
         <form onSubmit={submit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="nome">Nome</Label>
-            <Input id="nome" value={nome} onChange={(e) => setNome(e.target.value)} />
+            <Label>Nome</Label>
+            <Input value={nome} onChange={(e) => setNome(e.target.value)} />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="cargo">Cargo</Label>
-            <Input id="cargo" value={cargo} onChange={(e) => setCargo(e.target.value)} placeholder="Ex: Pedreiro" />
+            <Label>Cargo</Label>
+            <Input value={cargo} onChange={(e) => setCargo(e.target.value)} placeholder="Ex: Pedreiro" />
           </div>
           {!obraIdFixo && (
             <div className="space-y-2">
               <Label>Obra</Label>
               <Select value={obraId} onValueChange={setObraId}>
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue placeholder="Selecione a obra" />
                 </SelectTrigger>
                 <SelectContent>
                   {obras.map((o) => (
@@ -67,8 +69,8 @@ export function NovoFuncionarioDialog({ obraIdFixo }: { obraIdFixo?: string }) {
             </div>
           )}
           <div className="space-y-2">
-            <Label htmlFor="admissao">Admissão</Label>
-            <Input id="admissao" value={admissao} onChange={(e) => setAdmissao(e.target.value)} placeholder="dd/mm/aaaa" />
+            <Label>Admissão</Label>
+            <Input value={admissao} onChange={(e) => setAdmissao(e.target.value)} placeholder="dd/mm/aaaa" />
           </div>
           <div className="space-y-2">
             <Label>Status</Label>

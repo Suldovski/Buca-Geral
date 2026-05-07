@@ -1,14 +1,12 @@
-import { cn } from "@/lib/utils";
+﻿import { cn } from "@/lib/utils";
 
 export function StatusBadge({ status }: { status: string }) {
   const active = ["Ativo", "Ativa"].includes(status);
   return (
     <span
       className={cn(
-        "inline-block rounded-full px-3 py-1 text-xs font-medium",
-        active
-          ? "bg-green-100 text-green-800"
-          : "bg-gray-100 text-gray-800",
+        "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold transition-colors",
+        active ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
       )}
     >
       {status}

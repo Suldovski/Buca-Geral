@@ -1,36 +1,12 @@
-﻿import { Obra, Funcionario, Usuario } from './mock-data';
-
-const API_BASE = 'http://localhost:5000/api';
-const REQUEST_TIMEOUT = 10000; // 10 seconds
+﻿const API_BASE = 'http://localhost:5000/api';
 
 export async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
-  
-  try {
-    const res = await fetch(`${API_BASE}${endpoint}`, {
-      headers: { 'Content-Type': 'application/json' },
-      ...options,
-      signal: controller.signal,
-    });
-    
-    if (!res.ok) {
-      let errorMsg = `Erro ${res.status}`;
-      try {
-        const contentType = res.headers.get('content-type');
-        if (contentType?.includes('application/json')) {
-          const data = await res.json();
-          errorMsg = data.message || data.error || errorMsg;
-        }
-      } catch {
-        errorMsg = `Erro ${res.status}: ${res.statusText}`;
-      }
-      throw new Error(errorMsg);
-    }
-    return res.json();
-  } finally {
-    clearTimeout(timeout);
-  }
+  const res = await fetch(`${API_BASE}${endpoint}`, {
+    headers: { 'Content-Type': 'application/json' },
+    ...options,
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
 }
 
 export const api = {
@@ -42,21 +18,20 @@ export const api = {
       }),
   },
   obras: {
-    listar: () => request<Obra[]>('/obras'),
-    criar: (data: Obra) => request<Obra>('/obras', { method: 'POST', body: JSON.stringify(data) }),
-    atualizar: (id: string, data: Partial<Obra>) => request<Obra>(`/obras/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-    excluir: (id: string) => request<void>(`/obras/${id}`, { method: 'DELETE' }),
-    buscarPorId: (id: string) => request<Obra>(`/obras/${id}`),
+    listar: () => request<any[]>('/obras'),
+    criar: (data: any) => request('/obras', { method: 'POST', body: JSON.stringify(data) }),
+    atualizar: (id: string, data: any) => request(`/obras/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    excluir: (id: string) => request(`/obras/${id}`, { method: 'DELETE' }),
   },
   funcionarios: {
-    listar: () => request<Funcionario[]>('/funcionarios'),
-    criar: (data: Funcionario) => request<Funcionario>('/funcionarios', { method: 'POST', body: JSON.stringify(data) }),
-    atualizar: (id: string, data: Partial<Funcionario>) => request<Funcionario>(`/funcionarios/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-    excluir: (id: string) => request<void>(`/funcionarios/${id}`, { method: 'DELETE' }),
+    listar: () => request<any[]>('/funcionarios'),
+    criar: (data: any) => request('/funcionarios', { method: 'POST', body: JSON.stringify(data) }),
+    atualizar: (id: string, data: any) => request(`/funcionarios/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    excluir: (id: string) => request(`/funcionarios/${id}`, { method: 'DELETE' }),
   },
   usuarios: {
-    listar: () => request<Usuario[]>('/usuarios'),
-    criar: (data: Usuario) => request<Usuario>('/usuarios', { method: 'POST', body: JSON.stringify(data) }),
-    excluir: (uid: string) => request<void>(`/usuarios/${uid}`, { method: 'DELETE' }),
+    listar: () => request<any[]>('/usuarios'),
+    criar: (data: any) => request('/usuarios', { method: 'POST', body: JSON.stringify(data) }),
+    excluir: (uid: string) => request(`/usuarios/${uid}`, { method: 'DELETE' }),
   },
 };

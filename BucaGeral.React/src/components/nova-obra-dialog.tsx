@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -23,7 +23,10 @@ export function NovaObraDialog() {
     e.preventDefault();
     if (!nome || !localizacao) return;
     addObra({ nome, localizacao, inicio, status });
-    setNome(""); setLocalizacao(""); setInicio(todayBR()); setStatus("Ativa");
+    setNome("");
+    setLocalizacao("");
+    setInicio(todayBR());
+    setStatus("Ativa");
     setOpen(false);
   };
 
@@ -31,8 +34,7 @@ export function NovaObraDialog() {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button>
-          <Plus className="h-4 w-4 mr-2" />
-          Nova obra
+          <Plus className="size-4 mr-2" /> Nova obra
         </Button>
       </DialogTrigger>
       <DialogContent>
@@ -41,16 +43,16 @@ export function NovaObraDialog() {
         </DialogHeader>
         <form onSubmit={submit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="nome">Nome</Label>
-            <Input id="nome" value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Ex: Residencial Vista Mar" />
+            <Label>Nome</Label>
+            <Input value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Ex: Residencial Vista Mar" />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="localizacao">Localização</Label>
-            <Input id="localizacao" value={localizacao} onChange={(e) => setLocalizacao(e.target.value)} placeholder="Ex: Santos, SP" />
+            <Label>Localização</Label>
+            <Input value={localizacao} onChange={(e) => setLocalizacao(e.target.value)} placeholder="Ex: Santos, SP" />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="inicio">Início</Label>
-            <Input id="inicio" value={inicio} onChange={(e) => setInicio(e.target.value)} placeholder="dd/mm/aaaa" />
+            <Label>Início</Label>
+            <Input value={inicio} onChange={(e) => setInicio(e.target.value)} placeholder="dd/mm/aaaa" />
           </div>
           <div className="space-y-2">
             <Label>Status</Label>

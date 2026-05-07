@@ -14,6 +14,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as FuncionariosRouteImport } from './routes/funcionarios'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ObrasIndexRouteImport } from './routes/obras/index'
+import { Route as ObrasObraIdRouteImport } from './routes/obras/$obraId'
 
 const UsuariosRoute = UsuariosRouteImport.update({
   id: '/usuarios',
@@ -40,12 +41,18 @@ const ObrasIndexRoute = ObrasIndexRouteImport.update({
   path: '/obras/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ObrasObraIdRoute = ObrasObraIdRouteImport.update({
+  id: '/obras/$obraId',
+  path: '/obras/$obraId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/funcionarios': typeof FuncionariosRoute
   '/login': typeof LoginRoute
   '/usuarios': typeof UsuariosRoute
+  '/obras/$obraId': typeof ObrasObraIdRoute
   '/obras/': typeof ObrasIndexRoute
 }
 export interface FileRoutesByTo {
@@ -53,6 +60,7 @@ export interface FileRoutesByTo {
   '/funcionarios': typeof FuncionariosRoute
   '/login': typeof LoginRoute
   '/usuarios': typeof UsuariosRoute
+  '/obras/$obraId': typeof ObrasObraIdRoute
   '/obras': typeof ObrasIndexRoute
 }
 export interface FileRoutesById {
@@ -61,14 +69,34 @@ export interface FileRoutesById {
   '/funcionarios': typeof FuncionariosRoute
   '/login': typeof LoginRoute
   '/usuarios': typeof UsuariosRoute
+  '/obras/$obraId': typeof ObrasObraIdRoute
   '/obras/': typeof ObrasIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/funcionarios' | '/login' | '/usuarios' | '/obras/'
+  fullPaths:
+    | '/'
+    | '/funcionarios'
+    | '/login'
+    | '/usuarios'
+    | '/obras/$obraId'
+    | '/obras/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/funcionarios' | '/login' | '/usuarios' | '/obras'
-  id: '__root__' | '/' | '/funcionarios' | '/login' | '/usuarios' | '/obras/'
+  to:
+    | '/'
+    | '/funcionarios'
+    | '/login'
+    | '/usuarios'
+    | '/obras/$obraId'
+    | '/obras'
+  id:
+    | '__root__'
+    | '/'
+    | '/funcionarios'
+    | '/login'
+    | '/usuarios'
+    | '/obras/$obraId'
+    | '/obras/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -76,6 +104,7 @@ export interface RootRouteChildren {
   FuncionariosRoute: typeof FuncionariosRoute
   LoginRoute: typeof LoginRoute
   UsuariosRoute: typeof UsuariosRoute
+  ObrasObraIdRoute: typeof ObrasObraIdRoute
   ObrasIndexRoute: typeof ObrasIndexRoute
 }
 
@@ -116,6 +145,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ObrasIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/obras/$obraId': {
+      id: '/obras/$obraId'
+      path: '/obras/$obraId'
+      fullPath: '/obras/$obraId'
+      preLoaderRoute: typeof ObrasObraIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -124,6 +160,7 @@ const rootRouteChildren: RootRouteChildren = {
   FuncionariosRoute: FuncionariosRoute,
   LoginRoute: LoginRoute,
   UsuariosRoute: UsuariosRoute,
+  ObrasObraIdRoute: ObrasObraIdRoute,
   ObrasIndexRoute: ObrasIndexRoute,
 }
 export const routeTree = rootRouteImport
