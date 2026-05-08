@@ -1,62 +1,31 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Obras · Bucagrans</title>
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <div class="app">
     <div id="sidebar-slot"></div>
     <main>
-      <div class="page-header">
-        <h1>Obras</h1>
-        <button class="btn" onclick="abrirModalNovaObra()">+ Nova Obra</button>
-      </div>
-      <div class="table-wrap">
-        <table style="width:100%">
-          <thead>
-            <tr><th>Nome</th><th>Localização</th><th>Funcionários</th><th>Ações</th></tr>
-          </thead>
-          <tbody id="tbodyObras"></tbody>
-        </table>
-      </div>
+      <div class="page-header"><h1>Obras</h1><button class="btn" onclick="abrirModalObra()">+ Nova Obra</button></div>
+      <div class="table-wrap"><table><thead><tr><th>Nome</th><th>Localização</th><th>Funcionários</th><th>Ações</th></tr></thead><tbody id="tbodyObras"></tbody></table></div>
     </main>
   </div>
-
-  <div id="modalNovaObra" class="modal">
-    <div class="modal-content">
-      <span class="close" onclick="fecharModalNovaObra()">&times;</span>
-      <h3>Nova Obra</h3>
-      <form id="formNovaObra">
-        <div class="field"><label>Nome</label><input type="text" id="nomeObra" required style="text-transform: uppercase;"></div>
-        <div class="field"><label>Localização</label><input type="text" id="localizacaoObra" required style="text-transform: uppercase;"></div>
-        <div class="dialog-foot"><button type="submit" class="btn">Salvar</button><button type="button" class="btn btn-outline" onclick="fecharModalNovaObra()">Cancelar</button></div>
-      </form>
-    </div>
-  </div>
-
+  <div id="modalObra" class="modal"><div class="modal-content"><span class="close" onclick="fecharModalObra()">&times;</span><h3>Nova Obra</h3><form id="formObra"><div class="field"><label>Nome</label><input id="nomeObra" class="input" style="text-transform:uppercase" required></div><div class="field"><label>Localização</label><input id="localizacaoObra" class="input" style="text-transform:uppercase" required></div><div class="dialog-foot"><button type="submit" class="btn">Salvar</button><button type="button" class="btn btn-outline" onclick="fecharModalObra()">Cancelar</button></div></form></div></div>
   <script type="module">
-    import './app.js';
-
-    window.BG.mountLayout('obras');
-    window.BG.carregarObras();
-
-    window.abrirModalNovaObra = function abrirModalNovaObra() {
-      document.getElementById('modalNovaObra').style.display = 'flex';
-    };
-
-    window.fecharModalNovaObra = function fecharModalNovaObra() {
-      document.getElementById('modalNovaObra').style.display = 'none';
-    };
-
-    document.getElementById('formNovaObra').addEventListener('submit', async (e) => {
+    import { mountLayout, carregarObras, adicionarObra } from './app.js';
+    mountLayout('obras');
+    await carregarObras();
+    window.abrirModalObra = () => document.getElementById('modalObra').style.display = 'flex';
+    window.fecharModalObra = () => document.getElementById('modalObra').style.display = 'none';
+    document.getElementById('formObra').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const nome = document.getElementById('nomeObra').value.toUpperCase();
-      const localizacao = document.getElementById('localizacaoObra').value.toUpperCase();
-      await window.BG.adicionarObra(nome, localizacao);
-      window.fecharModalNovaObra();
+      await adicionarObra(document.getElementById('nomeObra').value.toUpperCase(), document.getElementById('localizacaoObra').value.toUpperCase());
+      fecharModalObra();
+      await carregarObras();
     });
   </script>
 </body>
