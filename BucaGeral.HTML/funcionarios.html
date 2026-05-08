@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Funcionários · Bucagrans</title>
   <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
   <div class="app">
@@ -14,20 +15,120 @@
         <h1>Funcionários</h1>
         <button class="btn" id="novoFuncBtn">+ Novo Funcionário</button>
       </div>
+
+      <!-- CARDS OBCAS -->
       <div class="stats-panel" id="statsPanel"></div>
+
+      <!-- FILTROS -->
       <div class="filters-bar">
-        <div class="search"><input id="searchInput" class="input" placeholder="Buscar"></div>
-        <select id="obraFilter" class="select"><option value="">Todas as obras</option></select>
+        <div class="search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+          <input id="searchInput" class="input" type="text" placeholder="Buscar por nome ou cargo">
+        </div>
+        <select id="obraFilter" class="select">
+          <option value="">Todas as obras</option>
+        </select>
       </div>
-      <div class="btn-group"><button class="btn" id="importarBtn">Importar Planilha</button><button class="btn" id="exportarBtn">Exportar Dados</button><button class="btn btn-danger" id="apagarTodosBtn">Apagar Todos</button></div>
-      <div class="table-wrap"><table><thead><tr><th>RE</th><th>Nome</th><th>Cargo</th><th>Obra</th><th>Tipo</th><th>Ações</th></tr></thead><tbody id="tbody"></tbody></table></div>
+
+      <!-- BOTÕES DE AÇÃO -->
+      <div class="btn-group">
+        <button class="btn" id="importarBtn">📥 Importar Planilha</button>
+        <button class="btn" id="exportarBtn">📤 Exportar Dados</button>
+        <button class="btn btn-danger" id="apagarTodosBtn">🗑️ Apagar Todos</button>
+      </div>
+
+      <!-- TABELA -->
+      <div class="table-wrap">
+        <table style="width:100%">
+          <thead>
+            <tr>
+              <th>RE</th><th>Nome</th><th>Cargo</th><th>Setor</th><th>Obra</th>
+              <th>Tipo Vínculo</th><th>Admissão</th><th>Status</th><th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
     </main>
   </div>
 
+  <!-- MODAL NOVO FUNCIONÁRIO -->
+  <div id="modalFunc" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="fecharModalFunc()">&times;</span>
+      <h3>Novo Funcionário</h3>
+      <form id="formFuncionario">
+        <div class="field"><label>RE</label><input id="re" class="input"></div>
+        <div class="field"><label>Nome</label><input id="nome" class="input" required></div>
+        <div class="field"><label>Cargo</label><input id="cargo" class="input" required></div>
+        <div class="field"><label>Setor</label><input id="setor" class="input"></div>
+        <div class="field"><label>Obra</label><select id="obraId" class="select" required></select></div>
+        <div class="field"><label>Tipo Vínculo</label><select id="tipoVinculo" class="select"><option>Efetivo</option><option>PJ</option><option>Terceiros</option><option>Mobilização</option><option>Alteração de Função</option></select></div>
+        <div class="field"><label>Data Admissão</label><input type="date" id="dataAdmissao" class="input"></div>
+        <div class="field"><label>Situação</label><select id="situacao" class="select"><option>Ativo</option><option>Aguarda Exame</option><option>Inativo</option></select></div>
+        <div class="dialog-foot"><button type="submit" class="btn">Salvar</button><button type="button" class="btn btn-outline" onclick="fecharModalFunc()">Cancelar</button></div>
+      </form>
+    </div>
+  </div>
+
   <script type="module">
-    import './app.js';
-    window.BG.mountLayout('funcionarios');
-    window.BG.carregarFuncionarios();
+    import { 
+      mountLayout, 
+      carregarFuncionarios, 
+      adicionarFuncionario,
+      carregarObras,
+      getFuncionarios,
+      getObras
+    } from './app.js';
+    
+    // Monta o menu lateral
+    mountLayout('funcionarios');
+    
+    // Carrega dados iniciais
+    await carregarFuncionarios();
+    
+    // Popula select de obras no modal
+    const obras = await getObras();
+    const selectObra = document.getElementById('obraId');
+    selectObra.innerHTML = '<option value="">Selecione uma obra</option>' + 
+      obras.map(o => `<option value="${o.id}">${o.nome}</option>`).join('');
+    
+    // Configura modais
+    window.abrirModalFunc = () => document.getElementById('modalFunc').style.display = 'flex';
+    window.fecharModalFunc = () => document.getElementById('modalFunc').style.display = 'none';
+    document.getElementById('novoFuncBtn').onclick = () => window.abrirModalFunc();
+    
+    // Submit do formulário
+    document.getElementById('formFuncionario').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const funcionario = {
+        re: document.getElementById('re').value,
+        nome: document.getElementById('nome').value,
+        cargo: document.getElementById('cargo').value,
+        setor: document.getElementById('setor').value,
+        obraId: document.getElementById('obraId').value,
+        tipoVinculo: document.getElementById('tipoVinculo').value,
+        dataAdmissao: document.getElementById('dataAdmissao').value,
+        situacao: document.getElementById('situacao').value,
+        ativo: true
+      };
+      await adicionarFuncionario(funcionario);
+      fecharModalFunc();
+      await carregarFuncionarios();
+    });
+    
+    // Filtros
+    document.getElementById('searchInput').addEventListener('input', () => carregarFuncionarios());
+    document.getElementById('obraFilter').addEventListener('change', () => carregarFuncionarios());
+    
+    // Botões de ação
+    document.getElementById('importarBtn').onclick = () => alert('Importação via Firebase será implementada');
+    document.getElementById('exportarBtn').onclick = () => alert('Exportação via Firebase será implementada');
+    document.getElementById('apagarTodosBtn').onclick = () => {
+      if (confirm('Excluir TODOS os funcionários?')) {
+        alert('Função de apagar todos será implementada');
+      }
+    };
   </script>
 </body>
 </html>
