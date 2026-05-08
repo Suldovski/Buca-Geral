@@ -1,19 +1,10 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Obras · Bucagrans</title>
-  <link rel="stylesheet" href="styles.css" />
-  <style>
-    .with-icon svg { width: 14px; height: 14px; margin-right: 4px; vertical-align: middle; }
-    .cell-muted { vertical-align: middle; }
-    .table-wrap table { width: 100%; border-collapse: collapse; }
-    .table-wrap th, .table-wrap td { padding: 12px 16px; text-align: left; border-bottom: 1px solid #e2e8f0; }
-    .table-wrap th { background: #f8fafc; font-weight: 600; color: #475569; }
-    .table-wrap tr:hover { background: #f8fafc; }
-    .search { max-width: 380px; margin-bottom: 20px; }
-  </style>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <div class="app">
@@ -21,47 +12,51 @@
     <main>
       <div class="page-header">
         <h1>Obras</h1>
-        <button class="btn" onclick="openDialog('dlg-obra')">+ Nova obra</button>
-      </div>
-      <div class="search">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
-        <input id="q" class="input" placeholder="Buscar por nome ou localização" oninput="BG.renderObras()" />
+        <button class="btn" onclick="abrirModalNovaObra()">+ Nova Obra</button>
       </div>
       <div class="table-wrap">
-        <table>
+        <table style="width:100%">
           <thead>
-            <tr>
-              <th>Obra</th>
-              <th>Localização</th>
-              <th>Início</th>
-              <th>Efetivo</th>
-              <th>Status</th>
-             </tr>
+            <tr><th>Nome</th><th>Localização</th><th>Funcionários</th><th>Ações</th></tr>
           </thead>
-          <tbody id="tbody"></tbody>
+          <tbody id="tbodyObras"></tbody>
         </table>
       </div>
     </main>
   </div>
-  <div class="dialog-back" id="dlg-obra">
-    <div class="dialog">
-      <h2>Nova obra</h2>
-      <form onsubmit="submitNovaObra(event)">
-        <div class="field"><label>Nome</label><input class="input" name="nome" required placeholder="Ex: Residencial Vista Mar" /></div>
-        <div class="field"><label>Localização</label><input class="input" name="localizacao" required placeholder="Ex: Santos, SP" /></div>
-        <div class="row-2">
-          <div class="field"><label>Início</label><input class="input" name="inicio" id="obra-inicio" placeholder="dd/mm/aaaa" /></div>
-          <div class="field"><label>Status</label><select class="select" name="status"><option>Ativa</option><option>Encerrada</option></select></div>
-        </div>
-        <div class="dialog-foot"><button type="button" class="btn btn-outline" onclick="closeDialog('dlg-obra')">Cancelar</button><button type="submit" class="btn">Criar obra</button></div>
+
+  <div id="modalNovaObra" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="fecharModalNovaObra()">&times;</span>
+      <h3>Nova Obra</h3>
+      <form id="formNovaObra">
+        <div class="field"><label>Nome</label><input type="text" id="nomeObra" required style="text-transform: uppercase;"></div>
+        <div class="field"><label>Localização</label><input type="text" id="localizacaoObra" required style="text-transform: uppercase;"></div>
+        <div class="dialog-foot"><button type="submit" class="btn">Salvar</button><button type="button" class="btn btn-outline" onclick="fecharModalNovaObra()">Cancelar</button></div>
       </form>
     </div>
   </div>
+
   <script src="app.js"></script>
   <script>
     BG.mountLayout("obras");
-    document.getElementById("obra-inicio").value = BG.hojeBR();
-    BG.renderObras();
+    BG.carregarObras();
+
+    function abrirModalNovaObra() { document.getElementById('modalNovaObra').style.display = 'flex'; }
+    function fecharModalNovaObra() { document.getElementById('modalNovaObra').style.display = 'none'; }
+
+    document.getElementById('formNovaObra').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const nome = document.getElementById('nomeObra').value.toUpperCase();
+      const localizacao = document.getElementById('localizacaoObra').value.toUpperCase();
+      await fetch('http://localhost:5000/api/obras', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nome, localizacao, dataInicio: new Date().toISOString(), ativo: true })
+      });
+      fecharModalNovaObra();
+      BG.carregarObras();
+    });
   </script>
 </body>
 </html>

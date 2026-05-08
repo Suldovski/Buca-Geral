@@ -1,64 +1,47 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Detalhe da obra ∑ Bucagrans</title>
-  <link rel="stylesheet" href="styles.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Detalhe da Obra ¬∑ Bucagrans</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
   <div class="app">
     <div id="sidebar-slot"></div>
-    <main id="detalhe">
-      <a class="back-link" href="obras.html">? Voltar para obras</a>
-      <div class="page-header">
-        <h1 id="titulo">Obra</h1>
-        <button class="btn" onclick="openDialog('dlg-func')">+ Novo funcion·rio</button>
+    <main>
+      <a href="obras.html" class="back-link">‚Üê Voltar para obras</a>
+      <h1 id="obraNome">Carregando...</h1>
+
+      <div class="stats-panel" id="statsPanel"></div>
+
+      <div class="btn-group">
+        <button class="btn" id="importarBtn">Importar Planilha</button>
+        <button class="btn" id="exportarBtn">Exportar Dados</button>
+        <button class="btn btn-danger" id="apagarTodosBtn">Apagar Todos</button>
       </div>
-      <div class="info-grid">
-        <div class="card info-card"><div class="label">LocalizaÁ„o</div><div class="value" id="info-loc">ó</div></div>
-        <div class="card info-card"><div class="label">InÌcio</div><div class="value" id="info-inicio">ó</div></div>
-        <div class="card info-card"><div class="label">Efetivo ativo</div><div class="value" id="info-efetivo">ó</div></div>
+
+      <div class="filters-bar">
+        <div class="search"><input id="searchInput" class="input" type="text" placeholder="Buscar funcion√°rio"></div>
+        <div class="rankings" id="rankings"></div>
       </div>
-      <div class="card" style="margin-bottom:18px;display:flex;justify-content:space-between;align-items:center">
-        <span style="color:var(--muted)">Status</span>
-        <span id="info-status"></span>
-      </div>
+
       <div class="table-wrap">
-        <table>
-          <thead>
-            <tr><th>Nome</th><th>Cargo</th><th>Admiss„o</th><th>Status</th></tr>
-          </thead>
+        <table style="width:100%">
+          <thead><tr><th>RE</th><th>Nome</th><th>Cargo</th><th>Setor</th><th>Tipo</th><th>Admiss√£o</th><th>A√ß√µes</th></tr></thead>
           <tbody id="tbody"></tbody>
         </table>
       </div>
     </main>
   </div>
-  <div class="dialog-back" id="dlg-func">
-    <div class="dialog">
-      <h2>Novo funcion·rio</h2>
-      <form onsubmit="submitNovoFuncObra(event)">
-        <input type="hidden" name="obraId" id="obra-id-fixo" />
-        <div class="field"><label>Nome</label><input class="input" name="nome" required /></div>
-        <div class="field"><label>Cargo</label><input class="input" name="cargo" required placeholder="Ex: Pedreiro" /></div>
-        <div class="row-2">
-          <div class="field"><label>Admiss„o</label><input class="input" name="admissao" id="func-adm" placeholder="dd/mm/aaaa" /></div>
-          <div class="field"><label>Status</label>
-            <select class="select" name="status"><option>Ativo</option><option>Inativo</option></select>
-          </div>
-        </div>
-        <div class="dialog-foot">
-          <button type="button" class="btn btn-outline" onclick="closeDialog('dlg-func')">Cancelar</button>
-          <button type="submit" class="btn">Criar funcion·rio</button>
-        </div>
-      </form>
-    </div>
-  </div>
-  <script src="/app.js"></script>
+
+  <div id="modalEditFunc" class="modal"><div class="modal-content"><span class="close" onclick="fecharModalEdit()">&times;</span><h3>Editar Funcion√°rio</h3><form id="formEditFunc"><input type="hidden" id="editId"><div class="field"><label>RE</label><input id="editRE" class="input"></div><div class="field"><label>Nome</label><input id="editNome" class="input"></div><div class="field"><label>Cargo</label><input id="editCargo" class="input"></div><div class="field"><label>Setor</label><input id="editSetor" class="input"></div><div class="field"><label>Tipo V√≠nculo</label><select id="editTipoVinculo" class="select"><option>Efetivo</option><option>PJ</option><option>Terceiros</option><option>Mobiliza√ß√£o</option><option>Altera√ß√£o de Fun√ß√£o</option></select></div><div class="field"><label>Situa√ß√£o</label><select id="editSituacao" class="select"><option>Ativo</option><option>Aguarda Exame</option><option>Inativo</option></select></div><div class="field"><label>Data Admiss√£o</label><input type="date" id="editDataAdmissao" class="input"></div><button type="submit" class="btn">Salvar</button></form></div></div>
+
+  <script src="app.js"></script>
   <script>
     BG.mountLayout("obras");
-    document.getElementById("func-adm").value = BG.todayBR();
-    BG.renderObraDetalhe();
+    BG.carregarDetalheObra();
   </script>
 </body>
 </html>

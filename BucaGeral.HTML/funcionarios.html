@@ -1,33 +1,11 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Funcionários · Bucagrans</title>
-  <link rel="stylesheet" href="styles.css" />
-  <style>
-    .filtros-container {
-      display: flex;
-      gap: 16px;
-      margin-bottom: 24px;
-      align-items: flex-end;
-      flex-wrap: wrap;
-    }
-    .filtros-container .search {
-      flex: 2;
-      min-width: 200px;
-      margin-bottom: 0;
-    }
-    .filtros-container .select {
-      flex: 1;
-      min-width: 180px;
-      margin-bottom: 0;
-    }
-    .table-wrap table { width: 100%; border-collapse: collapse; }
-    .table-wrap th, .table-wrap td { padding: 12px 16px; text-align: left; border-bottom: 1px solid #e2e8f0; }
-    .table-wrap th { background: #f8fafc; font-weight: 600; color: #475569; }
-    .table-wrap tr:hover { background: #f8fafc; }
-  </style>
+  <link rel="stylesheet" href="styles.css">
+  <style>.filters-bar { display: flex; gap: 16px; margin-bottom: 24px; align-items: flex-end; } .filters-bar .search { flex: 2; }</style>
 </head>
 <body>
   <div class="app">
@@ -35,53 +13,21 @@
     <main>
       <div class="page-header">
         <h1>Funcionários</h1>
-        <button class="btn" onclick="openDialog('dlg-func')">+ Novo funcionário</button>
+        <button class="btn" id="novoFuncBtn">+ Novo Funcionário</button>
       </div>
-      <div class="filtros-container">
-        <div class="search">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
-          <input id="q" class="input" placeholder="Buscar por nome ou cargo" oninput="BG.renderFuncionarios()" />
-        </div>
-        <select id="obra-filter" class="select" onchange="BG.renderFuncionarios()"></select>
+      <div class="stats-panel" id="statsPanel"></div>
+      <div class="filters-bar">
+        <div class="search"><input id="searchInput" class="input" placeholder="Buscar"></div>
+        <select id="obraFilter" class="select"><option value="">Todas as obras</option></select>
       </div>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Nome</th>
-              <th>Cargo</th>
-              <th>Obra</th>
-              <th>Admissão</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody id="tbody"></tbody>
-        </table>
-      </div>
+      <div class="btn-group"><button class="btn" id="importarBtn">Importar Planilha</button><button class="btn" id="exportarBtn">Exportar Dados</button><button class="btn btn-danger" id="apagarTodosBtn">Apagar Todos</button></div>
+      <div class="table-wrap"><table><thead><tr><th>RE</th><th>Nome</th><th>Cargo</th><th>Obra</th><th>Tipo</th><th>Ações</th></tr></thead><tbody id="tbody"></tbody></table></div>
     </main>
-  </div>
-  <div class="dialog-back" id="dlg-func">
-    <div class="dialog">
-      <h2>Novo funcionário</h2>
-      <form onsubmit="submitNovoFuncionario(event)">
-        <div class="field"><label>Nome</label><input class="input" name="nome" required /></div>
-        <div class="field"><label>Cargo</label><input class="input" name="cargo" required placeholder="Ex: Pedreiro" /></div>
-        <div class="field"><label>Obra</label><select class="select" name="obraId" id="dlg-obra-select"></select></div>
-        <div class="row-2">
-          <div class="field"><label>Admissão</label><input class="input" name="admissao" id="func-adm" placeholder="dd/mm/aaaa" /></div>
-          <div class="field"><label>Status</label><select class="select" name="status"><option>Ativo</option><option>Inativo</option></select></div>
-        </div>
-        <div class="dialog-foot"><button type="button" class="btn btn-outline" onclick="closeDialog('dlg-func')">Cancelar</button><button type="submit" class="btn">Criar funcionário</button></div>
-      </form>
-    </div>
   </div>
   <script src="app.js"></script>
   <script>
     BG.mountLayout("funcionarios");
-    BG.fillObrasSelect(document.getElementById("obra-filter"), true);
-    BG.fillObrasSelect(document.getElementById("dlg-obra-select"));
-    document.getElementById("func-adm").value = BG.hojeBR();
-    BG.renderFuncionarios();
+    BG.carregarFuncionarios();
   </script>
 </body>
 </html>
