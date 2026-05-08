@@ -37,25 +37,26 @@
     </div>
   </div>
 
-  <script src="app.js"></script>
-  <script>
-    BG.mountLayout("obras");
-    BG.carregarObras();
+  <script type="module">
+    import './app.js';
 
-    function abrirModalNovaObra() { document.getElementById('modalNovaObra').style.display = 'flex'; }
-    function fecharModalNovaObra() { document.getElementById('modalNovaObra').style.display = 'none'; }
+    window.BG.mountLayout('obras');
+    window.BG.carregarObras();
+
+    window.abrirModalNovaObra = function abrirModalNovaObra() {
+      document.getElementById('modalNovaObra').style.display = 'flex';
+    };
+
+    window.fecharModalNovaObra = function fecharModalNovaObra() {
+      document.getElementById('modalNovaObra').style.display = 'none';
+    };
 
     document.getElementById('formNovaObra').addEventListener('submit', async (e) => {
       e.preventDefault();
       const nome = document.getElementById('nomeObra').value.toUpperCase();
       const localizacao = document.getElementById('localizacaoObra').value.toUpperCase();
-      await fetch('http://localhost:5000/api/obras', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nome, localizacao, dataInicio: new Date().toISOString(), ativo: true })
-      });
-      fecharModalNovaObra();
-      BG.carregarObras();
+      await window.BG.adicionarObra(nome, localizacao);
+      window.fecharModalNovaObra();
     });
   </script>
 </body>

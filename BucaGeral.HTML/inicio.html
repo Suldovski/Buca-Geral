@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
@@ -35,10 +35,11 @@
       </div>
     </main>
   </div>
-  <script src="app.js"></script>
-  <script>
-    BG.mountLayout("inicio");
-    BG.renderInicio();
+
+  <script type="module">
+    import './app.js';
+    window.BG.mountLayout('inicio');
+    window.BG.renderInicio();
   </script>
 </body>
 </html>

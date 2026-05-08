@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Login · Bucagrans</title>
+  <title>Login Â· Bucagrans</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -11,40 +11,24 @@
     <div class="card login-card">
       <div class="logo">B</div>
       <h2>Bucagrans</h2>
-      <p class="sub">Entre na sua conta</p>
+      <p class="sub">Entre com sua conta Firebase</p>
       <form id="loginForm">
         <div class="field">
-          <label>E-mail</label>
+          <label for="email">E-mail</label>
           <input id="email" class="input" type="email" placeholder="seu@email.com" required />
         </div>
         <div class="field">
-          <label>Senha</label>
-          <input id="senha" class="input" type="password" required />
+          <label for="senha">Senha</label>
+          <input id="senha" class="input" type="password" minlength="6" required />
         </div>
-        <button type="submit" class="btn">Entrar</button>
+        <button type="submit" class="btn login-btn">Entrar</button>
       </form>
-      <div id="erroMsg" style="color:red; margin-top:15px; text-align:center;"></div>
+      <div id="erroMsg" class="login-error" role="alert" aria-live="polite"></div>
     </div>
   </div>
-  <script src="/app.js"></script>
-  <script>
-    document.getElementById('loginForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const email = document.getElementById('email').value;
-      const senha = document.getElementById('senha').value;
-      const response = await fetch('http://localhost:5000/api/Auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, senha })
-      });
-      if (response.ok) {
-        const usuario = await response.json();
-        localStorage.setItem('usuario', JSON.stringify(usuario));
-        window.location.href = 'inicio.html';
-      } else {
-        document.getElementById('erroMsg').innerText = 'E-mail ou senha inválidos';
-      }
-    });
+
+  <script type="module">
+    import './app.js';
   </script>
 </body>
 </html>
