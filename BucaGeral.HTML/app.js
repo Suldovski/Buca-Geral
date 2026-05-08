@@ -1,41 +1,45 @@
-﻿const STORAGE_KEY = "bucagrans_data";
+const STORAGE_KEY = "bucagrans_data";
+const API_URL = "http://localhost:5000/api";
 
 const SEED = {
   obras: [
     { id: "1", nome: "Residencial Vista Mar", localizacao: "Santos, SP", inicio: "11/03/2024", status: "Ativa" },
-    { id: "2", nome: "Edifício Central Tower", localizacao: "São Paulo, SP", inicio: "31/08/2023", status: "Ativa" },
-    { id: "3", nome: "Galpão Logístico Norte", localizacao: "Campinas, SP", inicio: "19/01/2024", status: "Ativa" },
-    { id: "4", nome: "Reforma Sede Matriz", localizacao: "Rio de Janeiro, RJ", inicio: "09/05/2022", status: "Encerrada" }
+    { id: "2", nome: "Edifício Central Tower", localizacao: "São Paulo, SP", inicio: "31/08/2023", status: "Ativa" }
   ],
   funcionarios: [
     { id: "1", nome: "Carlos Almeida", cargo: "Engenheiro Civil", obraId: "1", admissao: "14/01/2026", status: "Ativo" },
-    { id: "2", nome: "Mariana Silva", cargo: "Mestre de Obras", obraId: "1", admissao: "21/01/2026", status: "Ativo" },
-    { id: "3", nome: "João Pedro Santos", cargo: "Pedreiro", obraId: "1", admissao: "04/02/2026", status: "Ativo" },
-    { id: "4", nome: "Ana Paula Costa", cargo: "Engenheiro Civil", obraId: "2", admissao: "17/02/2026", status: "Ativo" },
-    { id: "5", nome: "Roberto Lima", cargo: "Eletricista", obraId: "2", admissao: "27/02/2026", status: "Ativo" },
-    { id: "6", nome: "Fernanda Rocha", cargo: "Pedreiro", obraId: "2", admissao: "03/03/2026", status: "Inativo" },
-    { id: "7", nome: "Lucas Pereira", cargo: "Pedreiro", obraId: "3", admissao: "11/03/2026", status: "Ativo" },
-    { id: "8", nome: "Patrícia Mendes", cargo: "Auxiliar Administrativo", obraId: "3", admissao: "19/03/2026", status: "Ativo" },
-    { id: "9", nome: "Gustavo Henrique", cargo: "Pintor", obraId: "4", admissao: "01/04/2026", status: "Inativo" },
-    { id: "10", nome: "Renata Souza", cargo: "Pedreiro", obraId: "1", admissao: "09/04/2026", status: "Ativo" },
-    { id: "11", nome: "Tiago Martins", cargo: "Eletricista", obraId: "3", admissao: "21/04/2026", status: "Ativo" },
-    { id: "12", nome: "Beatriz Andrade", cargo: "Pedreiro", obraId: "2", admissao: "05/05/2026", status: "Ativo" }
+    { id: "2", nome: "Mariana Silva", cargo: "Mestre de Obras", obraId: "1", admissao: "21/01/2026", status: "Ativo" }
   ],
   usuarios: [
-    { id: "1", nome: "Admin Master", email: "admin@bucagrans.com.br", perfil: "Administrador", status: "Ativo" },
-    { id: "2", nome: "Joana Engenheira", email: "joana@bucagrans.com.br", perfil: "Operador", status: "Ativo" },
-    { id: "3", nome: "Marcos Diretor", email: "marcos@bucagrans.com.br", perfil: "Visualizador", status: "Inativo" }
+    { id: "1", nome: "Admin Master", email: "admin@bucagrans.com.br", perfil: "Administrador", status: "Ativo" }
   ]
 };
 
-function loadData() { try { const raw = localStorage.getItem(STORAGE_KEY); if (raw) return JSON.parse(raw); } catch(e) {} return JSON.parse(JSON.stringify(SEED)); }
+function loadData() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (_) {}
+  return JSON.parse(JSON.stringify(SEED));
+}
+
 function saveData(d) { localStorage.setItem(STORAGE_KEY, JSON.stringify(d)); }
 const data = loadData();
 const uid = () => Math.random().toString(36).slice(2, 10);
-const hojeBR = () => { const d = new Date(); return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`; };
-const escapeHtml = (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const badge = (s) => `<span class="badge ${["Ativo","Ativa"].includes(s) ? "on" : ""}">${s}</span>`;
-const obraNome = (id) => (data.obras.find(o => o.id === id) || {}).nome || "—";
+const hojeBR = () => {
+  const d = new Date();
+  return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
+};
+const escapeHtml = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const badge = (s) => `<span class="badge ${["Ativo", "Ativa"].includes(s) ? "on" : ""}">${escapeHtml(s)}</span>`;
+
+const pick = (obj, ...keys) => keys.find(k => obj?.[k] !== undefined && obj?.[k] !== null) ? obj[keys.find(k => obj?.[k] !== undefined && obj?.[k] !== null)] : "";
+const toDateDisplay = (value) => {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (!Number.isNaN(date.getTime())) return date.toLocaleDateString("pt-BR");
+  return String(value);
+};
 
 function renderSidebar(active) {
   const items = [
@@ -44,55 +48,348 @@ function renderSidebar(active) {
     { url: "funcionarios.html", label: "Funcionários", id: "funcionarios", icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 014-4h4a4 4 0 014 4v2M16 11a4 4 0 100-8M22 21v-2a4 4 0 00-3-3.87"/></svg>' },
     { url: "usuarios.html", label: "Usuários", id: "usuarios", icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0112 0v1"/></svg>' }
   ];
-  return `<aside class="sidebar"><div class="sidebar-brand"><div class="logo">B</div><div><div class="name">Bucagrans</div><div class="sub">Construtora de Obras SA</div></div></div><nav class="sidebar-nav">${items.map(i => `<a href="${i.url}" class="${active===i.id?"active":""}">${i.icon}<span>${i.label}</span></a>`).join("")}</nav><div class="sidebar-foot"><div class="who">admin</div><div class="email">admin@gmail.com.br</div><a href="login.html" class="btn-logout"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>Sair</a></div></aside>`;
+  return `<aside class="sidebar"><div class="sidebar-brand"><div class="logo">B</div><div><div class="name">Bucagrans</div><div class="sub">Construtora de Obras SA</div></div></div><nav class="sidebar-nav">${items.map(i => `<a href="${i.url}" class="${active === i.id ? "active" : ""}">${i.icon}<span>${i.label}</span></a>`).join("")}</nav><div class="sidebar-foot"><div class="who">admin</div><div class="email">admin@gmail.com.br</div><a href="login.html" class="btn-logout">Sair</a></div></aside>`;
 }
 
-function mountLayout(active) { const slot = document.getElementById("sidebar-slot"); if (slot) slot.outerHTML = renderSidebar(active); }
-function openDialog(id) { document.getElementById(id).classList.add("open"); }
-function closeDialog(id) { document.getElementById(id).classList.remove("open"); }
-window.openDialog = openDialog;
-window.closeDialog = closeDialog;
+function mountLayout(active) {
+  const slot = document.getElementById("sidebar-slot");
+  if (slot) slot.outerHTML = renderSidebar(active);
+}
 
 function renderInicio() {
   document.getElementById("stat-obras").textContent = data.obras.length;
   document.getElementById("stat-func").textContent = data.funcionarios.length;
-  const meses = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
-  const counts = meses.map((_, i) => data.funcionarios.filter(f => { const [, mm, yyyy] = f.admissao.split("/"); return Number(mm) === i+1 && yyyy === "2026"; }).length);
-  const max = Math.max(1, ...counts);
-  document.getElementById("bars").innerHTML = meses.map((m, i) => `<div class="col"><div class="bar" style="height:${(counts[i]/max)*100}%"></div><div class="lbl">${m}</div></div>`).join("");
-  const cargosCount = data.funcionarios.reduce((acc, f) => { acc[f.cargo] = (acc[f.cargo]||0)+1; return acc; }, {});
-  const cargos = Object.entries(cargosCount).sort((a,b) => b[1]-a[1]);
-  const maxC = Math.max(1, ...cargos.map(([,c]) => c));
-  document.getElementById("rank").innerHTML = cargos.map(([cargo, c]) => `<div class="rank-row"><div class="rank-head"><span>${escapeHtml(cargo)}</span><span class="n">${c}</span></div><div class="bar-track"><div class="bar-fill" style="width:${(c/maxC)*100}%"></div></div></div>`).join("");
-}
-
-function renderObras() {
-  const q = (document.getElementById("q")?.value || "").toLowerCase();
-  const rows = data.obras.filter(o => o.nome.toLowerCase().includes(q) || o.localizacao.toLowerCase().includes(q));
-  document.getElementById("tbody").innerHTML = rows.map(o => {
-    const efetivo = data.funcionarios.filter(f => f.obraId === o.id && f.status === "Ativo").length;
-    return `<tr onclick="location.href='obra.html?id=${o.id}'"><td class="cell-strong"><a href="obra.html?id=${o.id}" class="cell-link">${escapeHtml(o.nome)}</a><\/td><td class="cell-muted"><span class="with-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s7-7.58 7-13a7 7 0 10-14 0c0 5.42 7 13 7 13z"/><circle cx="12" cy="9" r="2.5"/></svg>${escapeHtml(o.localizacao)}</span><\/td><td>${o.inicio}<\/td><td>${efetivo} ativos<\/td><td>${badge(o.status)}<\/td><\/tr>`;
-  }).join("") || `<tr><td colspan="5" class="cell-muted" style="text-align:center;padding:30px">Nenhuma obra encontrada</td></tr>`;
-}
-
-function fillObrasSelect(sel, includeAll = false) {
-  sel.innerHTML = (includeAll ? `<option value="all">Todas as obras</option>` : "") + data.obras.map(o => `<option value="${o.id}">${escapeHtml(o.nome)}</option>`).join("");
-}
-
-function renderFuncionarios() {
-  const q = (document.getElementById("q")?.value || "").toLowerCase();
-  const obraSel = document.getElementById("obra-filter")?.value || "all";
-  const rows = data.funcionarios.filter(f => (obraSel === "all" || f.obraId === obraSel) && (f.nome.toLowerCase().includes(q) || f.cargo.toLowerCase().includes(q)));
-  document.getElementById("tbody").innerHTML = rows.map(f => `<tr><td class="cell-strong">${escapeHtml(f.nome)}<\/td><td>${escapeHtml(f.cargo)}<\/td><td class="cell-muted">${escapeHtml(obraNome(f.obraId))}<\/td><td>${f.admissao}<\/td><td>${badge(f.status)}<\/td><\/tr>`).join("") || `<tr><td colspan="5" class="cell-muted" style="text-align:center;padding:30px">Nenhum funcionário encontrado</td></tr>`;
 }
 
 function renderUsuarios() {
-  document.getElementById("tbody").innerHTML = data.usuarios.map(u => `<tr><td class="cell-strong">${escapeHtml(u.nome)}<\/td><td class="cell-muted">${escapeHtml(u.email)}<\/td><td>${escapeHtml(u.perfil)}<\/td><td>${badge(u.status)}<\/td><\/tr>`).join("");
+  const tbody = document.getElementById("tbody");
+  if (!tbody) return;
+  tbody.innerHTML = data.usuarios.map(u => `<tr><td class="cell-strong">${escapeHtml(u.nome)}</td><td class="cell-muted">${escapeHtml(u.email)}</td><td>${escapeHtml(u.perfil)}</td><td>${badge(u.status)}</td></tr>`).join("");
 }
 
-function submitNovaObra(e) { e.preventDefault(); const f = e.target; data.obras.push({ id: uid(), nome: f.nome.value.trim(), localizacao: f.localizacao.value.trim(), inicio: f.inicio.value.trim() || hojeBR(), status: f.status.value }); saveData(data); closeDialog("dlg-obra"); f.reset(); f.inicio.value = hojeBR(); renderObras(); }
-function submitNovoFuncionario(e) { e.preventDefault(); const f = e.target; data.funcionarios.push({ id: uid(), nome: f.nome.value.trim(), cargo: f.cargo.value.trim(), obraId: f.obraId.value, admissao: f.admissao.value.trim() || hojeBR(), status: f.status.value }); saveData(data); closeDialog("dlg-func"); f.reset(); f.admissao.value = hojeBR(); renderFuncionarios(); }
+function fillObrasSelect(sel, includeAll = false) {
+  if (!sel) return;
+  sel.innerHTML = (includeAll ? `<option value="all">Todas as obras</option>` : "") + data.obras.map(o => `<option value="${o.id}">${escapeHtml(o.nome)}</option>`).join("");
+}
+
+async function safeFetchJson(url, options) {
+  const response = await fetch(url, options);
+  if (!response.ok) throw new Error(`Falha na requisição: ${response.status}`);
+  return response.status === 204 ? null : response.json();
+}
+
+let detalheFuncionarios = [];
+let detalheFiltroTipo = null;
+let funcionariosTodos = [];
+let funcionariosObras = [];
+let funcionariosFiltroTipo = null;
+
+// ==================== OBRAS ====================
+async function carregarObras() {
+  const obras = await safeFetchJson(`${API_URL}/obras`);
+  const tbody = document.getElementById("tbodyObras");
+  if (!tbody) return;
+
+  const counts = await Promise.all(obras.map(async (o) => {
+    const id = pick(o, "id", "Id");
+    const funcs = await safeFetchJson(`${API_URL}/funcionarios?obraId=${encodeURIComponent(id)}`);
+    return { obra: o, total: Array.isArray(funcs) ? funcs.length : 0 };
+  }));
+
+  tbody.innerHTML = counts.map(({ obra, total }) => {
+    const id = pick(obra, "id", "Id");
+    const nome = pick(obra, "nome", "Nome");
+    const localizacao = pick(obra, "localizacao", "Localizacao");
+    return `<tr><td class="cell-strong"><a href="obra.html?id=${encodeURIComponent(id)}">${escapeHtml(nome)}</a></td><td>${escapeHtml(localizacao)}</td><td>${total}</td><td><button class="btn btn-sm" onclick="location.href='obra.html?id=${encodeURIComponent(id)}'">Ver</button></td></tr>`;
+  }).join("");
+}
+
+// ==================== DETALHE OBRA ====================
+async function carregarDetalheObra() {
+  const id = new URLSearchParams(location.search).get("id");
+  if (!id) return;
+
+  const obra = await safeFetchJson(`${API_URL}/obras/${encodeURIComponent(id)}`);
+  const titulo = document.getElementById("obraNome");
+  if (titulo) titulo.innerText = pick(obra, "nome", "Nome") || "Obra";
+
+  detalheFuncionarios = await safeFetchJson(`${API_URL}/funcionarios?obraId=${encodeURIComponent(id)}`) || [];
+  detalheFiltroTipo = null;
+  renderCards(detalheFuncionarios);
+  renderTabela(detalheFuncionarios);
+
+  const searchInput = document.getElementById("searchInput");
+  if (searchInput) searchInput.addEventListener("input", () => filtrarTabela(detalheFuncionarios));
+
+  const importarBtn = document.getElementById("importarBtn");
+  if (importarBtn) importarBtn.onclick = () => importarPlanilha(id);
+
+  const exportarBtn = document.getElementById("exportarBtn");
+  if (exportarBtn) exportarBtn.onclick = () => window.open(`${API_URL}/funcionarios/exportar?obraId=${encodeURIComponent(id)}`, "_blank");
+
+  const apagarTodosBtn = document.getElementById("apagarTodosBtn");
+  if (apagarTodosBtn) apagarTodosBtn.onclick = () => apagarTodos(id);
+}
+
+function renderCards(funcionarios) {
+  const tipos = {
+    "Total Geral": funcionarios.length,
+    "Efetivo": 0,
+    "PJ": 0,
+    "Operacional": 0,
+    "ADM": 0,
+    "Mobilização": 0,
+    "Alteração de Função": 0,
+    "Terceiros": 0
+  };
+
+  funcionarios.forEach((f) => {
+    const tipo = pick(f, "tipoVinculo", "TipoVinculo");
+    if (tipos[tipo] !== undefined) tipos[tipo]++;
+  });
+
+  const panel = document.getElementById("statsPanel");
+  if (!panel) return;
+  panel.innerHTML = "";
+
+  Object.entries(tipos).forEach(([label, value]) => {
+    const card = document.createElement("div");
+    card.className = "stat-card";
+    card.innerHTML = `<div class="label">${escapeHtml(label)}</div><div class="value">${value}</div>`;
+    card.onclick = () => filtrarPorTipo(funcionarios, label === "Total Geral" ? null : label);
+    panel.appendChild(card);
+  });
+}
+
+function filtrarPorTipo(funcionarios, tipo) {
+  if (document.getElementById("obraNome")) {
+    detalheFiltroTipo = tipo;
+  } else {
+    funcionariosFiltroTipo = tipo;
+  }
+
+  const filtrados = tipo
+    ? funcionarios.filter((f) => pick(f, "tipoVinculo", "TipoVinculo") === tipo)
+    : funcionarios;
+  renderTabela(filtrados);
+}
+
+function filtrarTabela(funcionarios) {
+  const busca = (document.getElementById("searchInput")?.value || "").toLowerCase();
+  const obraFilter = document.getElementById("obraFilter")?.value || "";
+  const tipoAtivo = document.getElementById("obraNome") ? detalheFiltroTipo : funcionariosFiltroTipo;
+
+  const filtrados = funcionarios.filter((f) => {
+    const nome = String(pick(f, "nome", "Nome")).toLowerCase();
+    const cargo = String(pick(f, "cargo", "Cargo")).toLowerCase();
+    const obraId = String(pick(f, "obraId", "ObraId"));
+    const tipo = String(pick(f, "tipoVinculo", "TipoVinculo"));
+
+    const matchBusca = nome.includes(busca) || cargo.includes(busca);
+    const matchObra = !obraFilter || obraId === obraFilter;
+    const matchTipo = !tipoAtivo || tipo === tipoAtivo;
+
+    return matchBusca && matchObra && matchTipo;
+  });
+
+  renderTabela(filtrados);
+}
+
+function renderTabela(funcionarios) {
+  const tbody = document.getElementById("tbody");
+  if (!tbody) return;
+
+  const isDetalheObra = !!document.getElementById("obraNome");
+
+  if (isDetalheObra) {
+    tbody.innerHTML = funcionarios.map((f) => {
+      const id = pick(f, "id", "Id");
+      return `<tr><td>${escapeHtml(pick(f, "re", "RE") || "-")}</td><td class="cell-strong">${escapeHtml(pick(f, "nome", "Nome"))}</td><td>${escapeHtml(pick(f, "cargo", "Cargo") || "-")}</td><td>${escapeHtml(pick(f, "setor", "Setor") || "-")}</td><td>${escapeHtml(pick(f, "tipoVinculo", "TipoVinculo") || "-")}</td><td>${toDateDisplay(pick(f, "dataAdmissao", "DataAdmissao"))}</td><td><button class="btn btn-sm btn-warning" onclick="abrirModalEditar('${escapeHtml(id)}')">Editar</button> <button class="btn btn-sm btn-danger" onclick="excluirFuncionario('${escapeHtml(id)}')">Excluir</button></td></tr>`;
+    }).join("");
+    return;
+  }
+
+  tbody.innerHTML = funcionarios.map((f) => {
+    const id = pick(f, "id", "Id");
+    const obraId = String(pick(f, "obraId", "ObraId"));
+    const obra = funcionariosObras.find((o) => String(pick(o, "id", "Id")) === obraId);
+    return `<tr><td>${escapeHtml(pick(f, "re", "RE") || "-")}</td><td class="cell-strong">${escapeHtml(pick(f, "nome", "Nome"))}</td><td>${escapeHtml(pick(f, "cargo", "Cargo") || "-")}</td><td>${escapeHtml(pick(obra || {}, "nome", "Nome") || "-")}</td><td>${escapeHtml(pick(f, "tipoVinculo", "TipoVinculo") || "-")}</td><td><button class="btn btn-sm btn-warning" onclick="abrirModalEditar('${escapeHtml(id)}')">Editar</button> <button class="btn btn-sm btn-danger" onclick="excluirFuncionario('${escapeHtml(id)}')">Excluir</button></td></tr>`;
+  }).join("");
+}
+
+async function carregarFuncionarios() {
+  funcionariosObras = await safeFetchJson(`${API_URL}/obras`) || [];
+  funcionariosTodos = await safeFetchJson(`${API_URL}/funcionarios`) || [];
+  funcionariosFiltroTipo = null;
+
+  const obraFilter = document.getElementById("obraFilter");
+  if (obraFilter) {
+    obraFilter.innerHTML = '<option value="">Todas as obras</option>' + funcionariosObras.map((o) => `<option value="${escapeHtml(pick(o, "id", "Id"))}">${escapeHtml(pick(o, "nome", "Nome"))}</option>`).join("");
+    obraFilter.onchange = () => filtrarTabela(funcionariosTodos);
+  }
+
+  const searchInput = document.getElementById("searchInput");
+  if (searchInput) searchInput.addEventListener("input", () => filtrarTabela(funcionariosTodos));
+
+  const importarBtn = document.getElementById("importarBtn");
+  if (importarBtn) importarBtn.onclick = () => importarPlanilha();
+
+  const exportarBtn = document.getElementById("exportarBtn");
+  if (exportarBtn) exportarBtn.onclick = () => window.open(`${API_URL}/funcionarios/exportar`, "_blank");
+
+  const apagarTodosBtn = document.getElementById("apagarTodosBtn");
+  if (apagarTodosBtn) apagarTodosBtn.onclick = () => apagarTodos();
+
+  renderCards(funcionariosTodos);
+  renderTabela(funcionariosTodos);
+}
+
+async function importarPlanilha(obraId) {
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = ".xlsx";
+  input.onchange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("arquivo", file);
+
+    const query = obraId ? `?obraId=${encodeURIComponent(obraId)}` : "";
+    await fetch(`${API_URL}/funcionarios/importar${query}`, {
+      method: "POST",
+      body: formData
+    });
+
+    location.reload();
+  };
+  input.click();
+}
+
+async function apagarTodos(obraId) {
+  const mensagem = obraId
+    ? "Apagar TODOS os funcionários desta obra?"
+    : "Apagar TODOS os funcionários?";
+
+  if (!confirm(mensagem)) return;
+
+  const query = obraId ? `?obraId=${encodeURIComponent(obraId)}` : "";
+  await fetch(`${API_URL}/funcionarios/apagar-todos${query}`, { method: "DELETE" });
+  location.reload();
+}
+
+async function excluirFuncionario(id) {
+  if (!confirm("Excluir funcionário?")) return;
+
+  await fetch(`${API_URL}/funcionarios/${encodeURIComponent(id)}`, { method: "DELETE" });
+  location.reload();
+}
+
+async function abrirModalEditar(id) {
+  const modal = document.getElementById("modalEditFunc");
+  const form = document.getElementById("formEditFunc");
+  if (!modal || !form) {
+    alert("Funcionalidade de edição será implementada");
+    return;
+  }
+
+  const funcionario = await safeFetchJson(`${API_URL}/funcionarios/${encodeURIComponent(id)}`);
+  document.getElementById("editId").value = pick(funcionario, "id", "Id");
+  document.getElementById("editRE").value = pick(funcionario, "re", "RE");
+  document.getElementById("editNome").value = pick(funcionario, "nome", "Nome");
+  document.getElementById("editCargo").value = pick(funcionario, "cargo", "Cargo");
+  document.getElementById("editSetor").value = pick(funcionario, "setor", "Setor");
+  document.getElementById("editTipoVinculo").value = pick(funcionario, "tipoVinculo", "TipoVinculo") || "Efetivo";
+  document.getElementById("editSituacao").value = pick(funcionario, "situacao", "Situacao") || "Ativo";
+
+  const dataAdmissao = pick(funcionario, "dataAdmissao", "DataAdmissao");
+  const parsed = new Date(dataAdmissao);
+  document.getElementById("editDataAdmissao").value = Number.isNaN(parsed.getTime()) ? "" : parsed.toISOString().slice(0, 10);
+
+  modal.style.display = "flex";
+
+  form.onsubmit = async (event) => {
+    event.preventDefault();
+
+    const payload = {
+      id,
+      re: document.getElementById("editRE").value || "",
+      nome: document.getElementById("editNome").value || "",
+      cargo: document.getElementById("editCargo").value || "",
+      setor: document.getElementById("editSetor").value || "",
+      tipoVinculo: document.getElementById("editTipoVinculo").value || "",
+      situacao: document.getElementById("editSituacao").value || "",
+      dataAdmissao: document.getElementById("editDataAdmissao").value || null,
+      obraId: pick(funcionario, "obraId", "ObraId") || "",
+      ativo: pick(funcionario, "ativo", "Ativo") ?? true,
+      criadoEm: pick(funcionario, "criadoEm", "CriadoEm") || new Date().toISOString(),
+      criadoPor: pick(funcionario, "criadoPor", "CriadoPor") || ""
+    };
+
+    await fetch(`${API_URL}/funcionarios/${encodeURIComponent(id)}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    fecharModalEdit();
+    location.reload();
+  };
+}
+
+function fecharModalEdit() {
+  const modal = document.getElementById("modalEditFunc");
+  if (modal) modal.style.display = "none";
+}
+
+function submitNovaObra(e) {
+  e.preventDefault();
+  const f = e.target;
+  data.obras.push({
+    id: uid(),
+    nome: f.nome.value.trim(),
+    localizacao: f.localizacao.value.trim(),
+    inicio: f.inicio.value.trim() || hojeBR(),
+    status: f.status.value
+  });
+  saveData(data);
+}
+
+function submitNovoFuncionario(e) {
+  e.preventDefault();
+  const f = e.target;
+  data.funcionarios.push({
+    id: uid(),
+    nome: f.nome.value.trim(),
+    cargo: f.cargo.value.trim(),
+    obraId: f.obraId.value,
+    admissao: f.admissao.value.trim() || hojeBR(),
+    status: f.status.value
+  });
+  saveData(data);
+}
+
 window.submitNovaObra = submitNovaObra;
 window.submitNovoFuncionario = submitNovoFuncionario;
+window.fecharModalEdit = fecharModalEdit;
+window.abrirModalEditar = abrirModalEditar;
+window.excluirFuncionario = excluirFuncionario;
 
-window.BG = { mountLayout, renderInicio, renderObras, renderFuncionarios, renderUsuarios, fillObrasSelect, hojeBR };
+window.BG = {
+  mountLayout,
+  renderInicio,
+  renderUsuarios,
+  fillObrasSelect,
+  hojeBR,
+  carregarObras,
+  carregarDetalheObra,
+  renderCards,
+  renderTabela,
+  filtrarPorTipo,
+  filtrarTabela,
+  importarPlanilha,
+  apagarTodos,
+  excluirFuncionario,
+  abrirModalEditar,
+  carregarFuncionarios
+};
