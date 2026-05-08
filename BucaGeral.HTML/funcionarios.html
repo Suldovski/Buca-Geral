@@ -23,7 +23,7 @@
       <div class="filters-bar">
         <div class="search">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
-          <input id="searchInput" class="input" type="text" placeholder="Buscar por nome ou cargo">
+          <input id="searchInput" class="input" type="text" placeholder="Buscar por nome, cargo ou RE">
         </div>
         <select id="obraFilter" class="select">
           <option value="">Todas as obras</option>
@@ -37,16 +37,23 @@
         <button class="btn btn-danger" id="apagarTodosBtn">🗑️ Apagar Todos</button>
       </div>
 
-      <!-- TABELA -->
+      <!-- TABELA COMPLETA -->
       <div class="table-wrap">
         <table style="width:100%">
           <thead>
             <tr>
-              <th>RE</th><th>Nome</th><th>Cargo</th><th>Setor</th><th>Obra</th>
-              <th>Tipo Vínculo</th><th>Admissão</th><th>Status</th><th>Ações</th>
+              <th>RE</th>
+              <th>Nome</th>
+              <th>Cargo</th>
+              <th>Setor</th>
+              <th>Obra</th>
+              <th>Tipo Vínculo</th>
+              <th>Admissão</th>
+              <th>Situação</th>
+              <th>Ações</th>
             </tr>
           </thead>
-          <tbody id="tbody"></tbody>
+          <tbody id="tbodyFuncionarios"></tbody>
         </table>
       </div>
     </main>
@@ -61,12 +68,34 @@
         <div class="field"><label>RE</label><input id="re" class="input"></div>
         <div class="field"><label>Nome</label><input id="nome" class="input" required></div>
         <div class="field"><label>Cargo</label><input id="cargo" class="input" required></div>
-        <div class="field"><label>Setor</label><input id="setor" class="input"></div>
+        <div class="field"><label>Setor</label>
+          <select id="setor" class="select">
+            <option value="Operacional">Operacional</option>
+            <option value="ADM">ADM</option>
+          </select>
+        </div>
         <div class="field"><label>Obra</label><select id="obraId" class="select" required></select></div>
-        <div class="field"><label>Tipo Vínculo</label><select id="tipoVinculo" class="select"><option>Efetivo</option><option>PJ</option><option>Terceiros</option><option>Mobilização</option><option>Alteração de Função</option></select></div>
+        <div class="field"><label>Tipo Vínculo</label>
+          <select id="tipoVinculo" class="select">
+            <option value="Efetivo">Efetivo</option>
+            <option value="PJ">PJ</option>
+            <option value="Terceiros">Terceiros</option>
+            <option value="Mobilização">Mobilização</option>
+            <option value="Alteração de Função">Alteração de Função</option>
+          </select>
+        </div>
         <div class="field"><label>Data Admissão</label><input type="date" id="dataAdmissao" class="input"></div>
-        <div class="field"><label>Situação</label><select id="situacao" class="select"><option>Ativo</option><option>Aguarda Exame</option><option>Inativo</option></select></div>
-        <div class="dialog-foot"><button type="submit" class="btn">Salvar</button><button type="button" class="btn btn-outline" onclick="fecharModalFunc()">Cancelar</button></div>
+        <div class="field"><label>Situação</label>
+          <select id="situacao" class="select">
+            <option value="Ativo">Ativo</option>
+            <option value="Aguarda Exame">Aguarda Exame</option>
+            <option value="Inativo">Inativo</option>
+          </select>
+        </div>
+        <div class="dialog-foot">
+          <button type="submit" class="btn">Salvar</button>
+          <button type="button" class="btn btn-outline" onclick="fecharModalFunc()">Cancelar</button>
+        </div>
       </form>
     </div>
   </div>
@@ -77,21 +106,23 @@
       carregarFuncionarios, 
       adicionarFuncionario,
       carregarObras,
-      getFuncionarios,
-      getObras
+      getObras,
+      getFuncionarios
     } from './app.js';
     
     // Monta o menu lateral
     mountLayout('funcionarios');
     
     // Carrega dados iniciais
+    let todasObras = await getObras();
+    let todosFuncionarios = await getFuncionarios();
+    
     await carregarFuncionarios();
     
     // Popula select de obras no modal
-    const obras = await getObras();
     const selectObra = document.getElementById('obraId');
     selectObra.innerHTML = '<option value="">Selecione uma obra</option>' + 
-      obras.map(o => `<option value="${o.id}">${o.nome}</option>`).join('');
+      todasObras.map(o => `<option value="${o.id}">${o.nome}</option>`).join('');
     
     // Configura modais
     window.abrirModalFunc = () => document.getElementById('modalFunc').style.display = 'flex';
@@ -114,21 +145,136 @@
       };
       await adicionarFuncionario(funcionario);
       fecharModalFunc();
+      document.getElementById('formFuncionario').reset();
       await carregarFuncionarios();
     });
     
     // Filtros
-    document.getElementById('searchInput').addEventListener('input', () => carregarFuncionarios());
-    document.getElementById('obraFilter').addEventListener('change', () => carregarFuncionarios());
+    const searchInput = document.getElementById('searchInput');
+    const obraFilter = document.getElementById('obraFilter');
+    
+    function aplicarFiltros() {
+      const searchTerm = searchInput.value.toLowerCase();
+      const obraId = obraFilter.value;
+      
+      let filtrados = [...todosFuncionarios];
+      
+      if (obraId) {
+        filtrados = filtrados.filter(f => f.obraId === obraId);
+      }
+      
+      if (searchTerm) {
+        filtrados = filtrados.filter(f => 
+          (f.nome && f.nome.toLowerCase().includes(searchTerm)) ||
+          (f.cargo && f.cargo.toLowerCase().includes(searchTerm)) ||
+          (f.re && f.re.toLowerCase().includes(searchTerm))
+        );
+      }
+      
+      // Atualiza a tabela
+      const tbody = document.getElementById('tbodyFuncionarios');
+      tbody.innerHTML = filtrados.map(f => {
+        const obraNome = todasObras.find(o => o.id === f.obraId)?.nome || 'N/A';
+        return `<tr>
+          <td class="cell-strong">${f.re || '-'}</td>
+          <td class="cell-strong">${f.nome || ''}</td>
+          <td>${f.cargo || ''}</td>
+          <td>${f.setor || '-'}</td>
+          <td>${obraNome}</td>
+          <td><span class="badge ${f.tipoVinculo === 'Efetivo' ? 'on' : ''}">${f.tipoVinculo || '-'}</span></td>
+          <td>${f.dataAdmissao ? new Date(f.dataAdmissao).toLocaleDateString() : '-'}</td>
+          <td><span class="badge ${f.situacao === 'Ativo' ? 'on' : ''}">${f.situacao || 'Ativo'}</span></td>
+          <td>
+            <button class="btn btn-sm btn-warning" onclick="window.editarFuncionario('${f.id}')">Editar</button>
+            <button class="btn btn-sm btn-danger" onclick="window.excluirFuncionario('${f.id}')">Excluir</button>
+          </td>
+        <\/tr>`;
+      }).join('');
+      
+      // Atualiza cards OBCAS
+      atualizarCards(filtrados);
+    }
+    
+    function atualizarCards(funcionarios) {
+      const tipos = {
+        'Total Geral': funcionarios.length,
+        'Efetivos': funcionarios.filter(f => f.tipoVinculo === 'Efetivo').length,
+        'PJ': funcionarios.filter(f => f.tipoVinculo === 'PJ').length,
+        'Operacional': funcionarios.filter(f => f.setor === 'Operacional').length,
+        'ADM': funcionarios.filter(f => f.setor === 'ADM').length,
+        'Mobilização': funcionarios.filter(f => f.tipoVinculo === 'Mobilização').length,
+        'Alteração de Função': funcionarios.filter(f => f.tipoVinculo === 'Alteração de Função').length,
+        'Terceiros': funcionarios.filter(f => f.tipoVinculo === 'Terceiros').length
+      };
+      
+      const panel = document.getElementById('statsPanel');
+      if (panel) {
+        panel.innerHTML = '';
+        for (const [label, value] of Object.entries(tipos)) {
+          const card = document.createElement('div');
+          card.className = 'stat-card';
+          card.innerHTML = `<div class="label">${label}</div><div class="value">${value}</div>`;
+          card.onclick = () => filtrarPorCategoria(label, funcionarios);
+          panel.appendChild(card);
+        }
+      }
+    }
+    
+    function filtrarPorCategoria(categoria, todosFuncs) {
+      let filtrados;
+      switch(categoria) {
+        case 'Efetivos': filtrados = todosFuncs.filter(f => f.tipoVinculo === 'Efetivo'); break;
+        case 'PJ': filtrados = todosFuncs.filter(f => f.tipoVinculo === 'PJ'); break;
+        case 'Operacional': filtrados = todosFuncs.filter(f => f.setor === 'Operacional'); break;
+        case 'ADM': filtrados = todosFuncs.filter(f => f.setor === 'ADM'); break;
+        case 'Mobilização': filtrados = todosFuncs.filter(f => f.tipoVinculo === 'Mobilização'); break;
+        case 'Alteração de Função': filtrados = todosFuncs.filter(f => f.tipoVinculo === 'Alteração de Função'); break;
+        case 'Terceiros': filtrados = todosFuncs.filter(f => f.tipoVinculo === 'Terceiros'); break;
+        default: filtrados = todosFuncs;
+      }
+      
+      // Atualiza tabela com os filtrados
+      const tbody = document.getElementById('tbodyFuncionarios');
+      tbody.innerHTML = filtrados.map(f => {
+        const obraNome = todasObras.find(o => o.id === f.obraId)?.nome || 'N/A';
+        return `<tr>
+          <td class="cell-strong">${f.re || '-'}</td>
+          <td class="cell-strong">${f.nome || ''}</td>
+          <td>${f.cargo || ''}</td>
+          <td>${f.setor || '-'}</td>
+          <td>${obraNome}</td>
+          <td><span class="badge ${f.tipoVinculo === 'Efetivo' ? 'on' : ''}">${f.tipoVinculo || '-'}</span></td>
+          <td>${f.dataAdmissao ? new Date(f.dataAdmissao).toLocaleDateString() : '-'}</td>
+          <td><span class="badge ${f.situacao === 'Ativo' ? 'on' : ''}">${f.situacao || 'Ativo'}</span></td>
+          <td><button class="btn btn-sm btn-warning">Editar</button><button class="btn btn-sm btn-danger">Excluir</button></td>
+        <\/tr>`;
+      }).join('');
+    }
+    
+    // Event listeners
+    searchInput.addEventListener('input', aplicarFiltros);
+    obraFilter.addEventListener('change', aplicarFiltros);
     
     // Botões de ação
     document.getElementById('importarBtn').onclick = () => alert('Importação via Firebase será implementada');
     document.getElementById('exportarBtn').onclick = () => alert('Exportação via Firebase será implementada');
     document.getElementById('apagarTodosBtn').onclick = () => {
-      if (confirm('Excluir TODOS os funcionários?')) {
+      if (confirm('⚠️ ATENÇÃO: Isso excluirá TODOS os funcionários. Deseja continuar?')) {
         alert('Função de apagar todos será implementada');
       }
     };
+    
+    // Funções globais para editar/excluir
+    window.editarFuncionario = (id) => alert(`Editar funcionário ${id}`);
+    window.excluirFuncionario = async (id) => {
+      if (confirm('Excluir este funcionário?')) {
+        // await deleteFuncionario(id);
+        await carregarFuncionarios();
+      }
+    };
+    
+    // Aplicar filtros iniciais
+    aplicarFiltros();
   </script>
 </body>
 </html>
