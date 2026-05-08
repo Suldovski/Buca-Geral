@@ -10,21 +10,42 @@
   <div class="app">
     <div id="sidebar-slot"></div>
     <main>
-      <div class="page-header"><h1>Obras</h1><button class="btn" onclick="abrirModalObra()">+ Nova Obra</button></div>
-      <div class="table-wrap"><table><thead><tr><th>Nome</th><th>Localização</th><th>Funcionários</th><th>Ações</th></tr></thead><tbody id="tbodyObras"></tbody></table></div>
+      <div class="page-header">
+        <h1>Obras</h1>
+        <button class="btn" id="novaObraBtn">+ Nova Obra</button>
+      </div>
+      <div class="table-wrap">
+        <table style="width:100%">
+          <thead><tr><th>Nome</th><th>Localização</th><th>Funcionários</th><th>Ações</th></tr></thead>
+          <tbody id="tbodyObras"></tbody>
+        </table>
+      </div>
     </main>
   </div>
-  <div id="modalObra" class="modal"><div class="modal-content"><span class="close" onclick="fecharModalObra()">&times;</span><h3>Nova Obra</h3><form id="formObra"><div class="field"><label>Nome</label><input id="nomeObra" class="input" style="text-transform:uppercase" required></div><div class="field"><label>Localização</label><input id="localizacaoObra" class="input" style="text-transform:uppercase" required></div><div class="dialog-foot"><button type="submit" class="btn">Salvar</button><button type="button" class="btn btn-outline" onclick="fecharModalObra()">Cancelar</button></div></form></div></div>
+  <div id="modalObra" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="document.getElementById('modalObra').style.display='none'">&times;</span>
+      <h3>Nova Obra</h3>
+      <form id="formObra">
+        <div class="field"><label>Nome</label><input type="text" id="nomeObra" class="input" style="text-transform:uppercase" required></div>
+        <div class="field"><label>Localização</label><input type="text" id="localizacaoObra" class="input" style="text-transform:uppercase" required></div>
+        <div class="dialog-foot"><button type="submit" class="btn">Salvar</button><button type="button" class="btn btn-outline" onclick="document.getElementById('modalObra').style.display='none'">Cancelar</button></div>
+      </form>
+    </div>
+  </div>
   <script type="module">
     import { mountLayout, carregarObras, adicionarObra } from './app.js';
     mountLayout('obras');
     await carregarObras();
-    window.abrirModalObra = () => document.getElementById('modalObra').style.display = 'flex';
-    window.fecharModalObra = () => document.getElementById('modalObra').style.display = 'none';
+    
+    document.getElementById('novaObraBtn').onclick = () => document.getElementById('modalObra').style.display = 'flex';
     document.getElementById('formObra').addEventListener('submit', async (e) => {
       e.preventDefault();
-      await adicionarObra(document.getElementById('nomeObra').value.toUpperCase(), document.getElementById('localizacaoObra').value.toUpperCase());
-      fecharModalObra();
+      const nome = document.getElementById('nomeObra').value.toUpperCase();
+      const localizacao = document.getElementById('localizacaoObra').value.toUpperCase();
+      await adicionarObra(nome, localizacao);
+      document.getElementById('modalObra').style.display = 'none';
+      document.getElementById('formObra').reset();
       await carregarObras();
     });
   </script>
