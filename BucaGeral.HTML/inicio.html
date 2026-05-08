@@ -14,32 +14,21 @@
       <div class="grid grid-2">
         <div class="card stat">
           <div><div class="label">Obras</div><div class="value" id="stat-obras">0</div></div>
-          <div class="ico">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 8h.01M15 8h.01M9 12h.01M15 12h.01"/></svg>
-          </div>
+          <div class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 8h.01M15 8h.01M9 12h.01M15 12h.01"/></svg></div>
         </div>
         <div class="card stat">
           <div><div class="label">Funcionários</div><div class="value" id="stat-func">0</div></div>
-          <div class="ico">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 014-4h4a4 4 0 014 4v2"/></svg>
-          </div>
+          <div class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 014-4h4a4 4 0 014 4v2"/></svg></div>
         </div>
-        <div class="card">
-          <h3>Funcionários contratados por mês (2026)</h3>
-          <div class="bars" id="bars"></div>
-        </div>
-        <div class="card">
-          <h3>Funções com mais funcionários</h3>
-          <div id="rank"></div>
-        </div>
+        <div class="card"><h3>Funcionários contratados por mês (2026)</h3><div class="bars" id="bars"></div></div>
+        <div class="card"><h3>Funções com mais funcionários</h3><div id="rank"></div></div>
       </div>
     </main>
   </div>
-
   <script type="module">
-    import './app.js';
-    window.BG.mountLayout('inicio');
-    window.BG.renderInicio();
+    import { mountLayout, renderInicio } from './app.js';
+    mountLayout('inicio');
+    renderInicio();
   </script>
 </body>
 </html>
