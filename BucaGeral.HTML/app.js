@@ -222,13 +222,41 @@ function renderTabela(funcionarios) {
   const isDetalheObra = Boolean(document.getElementById("obraNome"));
 
   if (isDetalheObra) {
-    tbody.innerHTML = funcionarios.map((f) => `<tr><td>${escapeHtml(f.re || "-")}</td><td class="cell-strong">${escapeHtml(f.nome || "")}</td><td>${escapeHtml(f.cargo || "")}</td><td>${escapeHtml(f.setor || "-")}</td><td>${escapeHtml(f.tipoVinculo || "-")}</td><td>${f.dataAdmissao ? new Date(f.dataAdmissao).toLocaleDateString("pt-BR") : "-"}</td><td><button class="btn btn-sm btn-warning" onclick="editarFuncionario('${escapeHtml(f.id)}')">Editar</button> <button class="btn btn-sm btn-danger" onclick="excluirFuncionario('${escapeHtml(f.id)}')">Excluir</button></td></tr>`).join("");
+    tbody.innerHTML = funcionarios.map((f) => {
+      const admissao = f.dataAdmissao ? new Date(f.dataAdmissao).toLocaleDateString("pt-BR") : "-";
+      const id = escapeHtml(f.id);
+      return `
+        <tr>
+          <td>${escapeHtml(f.re || "-")}</td>
+          <td class="cell-strong">${escapeHtml(f.nome || "")}</td>
+          <td>${escapeHtml(f.cargo || "")}</td>
+          <td>${escapeHtml(f.setor || "-")}</td>
+          <td>${escapeHtml(f.tipoVinculo || "-")}</td>
+          <td>${admissao}</td>
+          <td>
+            <button class="btn btn-sm btn-warning" onclick="editarFuncionario('${id}')">Editar</button>
+            <button class="btn btn-sm btn-danger" onclick="excluirFuncionario('${id}')">Excluir</button>
+          </td>
+        </tr>`;
+    }).join("");
     return;
   }
 
   tbody.innerHTML = funcionarios.map((f) => {
     const obraNome = funcionariosObras.find((o) => o.id === f.obraId)?.nome || "N/A";
-    return `<tr><td>${escapeHtml(f.re || "-")}</td><td class="cell-strong">${escapeHtml(f.nome || "")}</td><td>${escapeHtml(f.cargo || "")}</td><td>${escapeHtml(obraNome)}</td><td>${escapeHtml(f.tipoVinculo || "-")}</td><td><button class="btn btn-sm btn-warning" onclick="editarFuncionario('${escapeHtml(f.id)}')">Editar</button><button class="btn btn-sm btn-danger" onclick="excluirFuncionario('${escapeHtml(f.id)}')">Excluir</button></td></tr>`;
+    const id = escapeHtml(f.id);
+    return `
+      <tr>
+        <td>${escapeHtml(f.re || "-")}</td>
+        <td class="cell-strong">${escapeHtml(f.nome || "")}</td>
+        <td>${escapeHtml(f.cargo || "")}</td>
+        <td>${escapeHtml(obraNome)}</td>
+        <td>${escapeHtml(f.tipoVinculo || "-")}</td>
+        <td>
+          <button class="btn btn-sm btn-warning" onclick="editarFuncionario('${id}')">Editar</button>
+          <button class="btn btn-sm btn-danger" onclick="excluirFuncionario('${id}')">Excluir</button>
+        </td>
+      </tr>`;
   }).join("");
 }
 
@@ -264,7 +292,17 @@ export async function carregarUsuarios() {
   const tbody = document.getElementById("tbody");
   if (!tbody) return;
 
-  tbody.innerHTML = usuarios.map((u) => `<tr><td>${escapeHtml(u.nome || "")}</td><td>${escapeHtml(u.email || "")}</td><td>${escapeHtml(u.perfil || "Operador")}</td><td>${escapeHtml(u.obraId || "-")}</td><td><button class="btn btn-sm btn-warning">Editar</button><button class="btn btn-sm btn-danger">Excluir</button></td></tr>`).join("");
+  tbody.innerHTML = usuarios.map((u) => `
+    <tr>
+      <td>${escapeHtml(u.nome || "")}</td>
+      <td>${escapeHtml(u.email || "")}</td>
+      <td>${escapeHtml(u.perfil || "Operador")}</td>
+      <td>${escapeHtml(u.obraId || "-")}</td>
+      <td>
+        <button class="btn btn-sm btn-warning">Editar</button>
+        <button class="btn btn-sm btn-danger">Excluir</button>
+      </td>
+    </tr>`).join("");
 }
 
 function initLoginPage() {
@@ -288,7 +326,7 @@ function initLoginPage() {
       await fazerLogin(email, senha);
     } catch (error) {
       if (erroMsg) erroMsg.textContent = "E-mail ou senha inválidos.";
-      console.error(error);
+      console.error(error?.code || "login-error");
     }
   });
 }

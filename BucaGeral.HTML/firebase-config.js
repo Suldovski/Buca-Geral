@@ -19,12 +19,12 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 const firebaseConfig = {
-  apiKey: "SUBSTITUA_PELA_API_KEY",
-  authDomain: "SUBSTITUA_PELO_AUTH_DOMAIN",
-  projectId: "SUBSTITUA_PELO_PROJECT_ID",
-  storageBucket: "SUBSTITUA_PELO_STORAGE_BUCKET",
-  messagingSenderId: "SUBSTITUA_PELO_MESSAGING_SENDER_ID",
-  appId: "SUBSTITUA_PELO_APP_ID"
+  apiKey: "AIzaSyDmbMa8UjpgAm2GFW8B8HqVb8b2cDy3agc",
+  authDomain: "buca-geral.firebaseapp.com",
+  projectId: "buca-geral",
+  storageBucket: "buca-geral.firebasestorage.app",
+  messagingSenderId: "413310771037",
+  appId: "1:413310771037:web:a30c43ec73c4f25c4b92b4"
 };
 
 const app = initializeApp(firebaseConfig);
