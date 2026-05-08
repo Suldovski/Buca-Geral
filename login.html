@@ -1,0 +1,49 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login · Bucagrans</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="login">
+    <div class="card login-card">
+      <div class="logo">B</div>
+      <h2>Bucagrans</h2>
+      <p class="sub">Construtora de Obras SA</p>
+      <form id="login-form">
+        <div class="field"><label>E-mail</label><input type="email" id="email" class="input" required></div>
+        <div class="field"><label>Senha</label><input type="password" id="password" class="input" required></div>
+        <button type="submit" class="btn">Entrar</button>
+      </form>
+      <div id="error-message" class="error" style="margin-top: 16px; color: red;"></div>
+    </div>
+  </div>
+  <script type="module">
+    import { fazerLogin } from './app.js';
+    
+    const form = document.getElementById('login-form');
+    const errorDiv = document.getElementById('error-message');
+    
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      errorDiv.textContent = 'Aguarde...';
+      
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      
+      try {
+        const success = await fazerLogin(email, password);
+        if (success) {
+          window.location.href = 'inicio.html';
+        } else {
+          errorDiv.textContent = 'E-mail ou senha inválidos. Verifique suas credenciais.';
+        }
+      } catch (err) {
+        errorDiv.textContent = 'Erro: ' + err.message;
+      }
+    });
+  </script>
+</body>
+</html>

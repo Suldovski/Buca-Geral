@@ -1,0 +1,48 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Obras · Bucagrans</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .modal-content input { margin-bottom: 12px; width: 100%; padding: 8px; }
+    .modal-content button { margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div id="sidebar-slot"></div>
+    <main>
+      <div class="page-header"><h1>Obras</h1><button class="btn" id="novaObraBtn">+ Nova Obra</button></div>
+      <div class="table-wrap"><table style="width:100%"><thead><tr><th>Nome</th><th>Localização</th><th>Funcionários</th><th>Ações</th></tr></thead><tbody id="tbodyObras"></tbody></table></div>
+    </main>
+  </div>
+  <div id="modalObra" class="modal" style="display:none;">
+    <div class="modal-content">
+      <span class="close" onclick="fecharModal()">&times;</span>
+      <h3>Nova Obra</h3>
+      <input type="text" id="nomeObra" class="input" placeholder="Nome da obra" style="text-transform:uppercase">
+      <input type="text" id="localizacaoObra" class="input" placeholder="Localização" style="text-transform:uppercase">
+      <button class="btn" id="salvarObraBtn">Salvar</button>
+    </div>
+  </div>
+  <script type="module">
+    import { mountLayout, carregarObras, adicionarObra } from './app.js';
+    mountLayout('obras');
+    await carregarObras();
+    const modal = document.getElementById('modalObra');
+    document.getElementById('novaObraBtn').onclick = () => modal.style.display = 'flex';
+    window.fecharModal = () => modal.style.display = 'none';
+    document.getElementById('salvarObraBtn').onclick = async () => {
+      const nome = document.getElementById('nomeObra').value;
+      const localizacao = document.getElementById('localizacaoObra').value;
+      if (nome && localizacao) {
+        await adicionarObra(nome, localizacao);
+        modal.style.display = 'none';
+        document.getElementById('nomeObra').value = '';
+        document.getElementById('localizacaoObra').value = '';
+      } else alert('Preencha todos os campos');
+    };
+  </script>
+</body>
+</html>

@@ -1,0 +1,51 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Usuários · Bucagrans</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app">
+    <div id="sidebar-slot"></div>
+    <main>
+      <div class="page-header">
+        <h1>Usuários</h1>
+        <button class="btn" id="novoUsuarioBtn">+ Novo Usuário</button>
+      </div>
+      <div class="table-wrap">
+        <table style="width:100%">
+          <thead><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Ações</th></tr></thead>
+          <tbody id="tbodyUsuarios"></tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+
+  <script type="module">
+    import { mountLayout, getUsuarios, addUsuario } from './app.js';
+    
+    mountLayout('usuarios');
+    
+    async function carregarUsuarios() {
+      const usuarios = await getUsuarios();
+      const tbody = document.getElementById('tbodyUsuarios');
+      tbody.innerHTML = usuarios.map(u => '<tr><td class="cell-strong">' + (u.nome || '') + '</td><td class="cell-muted">' + (u.email || '') + '</td><td>' + (u.perfil || 'Operador') + '</td><td><button class="btn btn-sm btn-warning">Editar</button> <button class="btn btn-sm btn-danger">Excluir</button></td></tr>').join('');
+    }
+    
+    document.getElementById('novoUsuarioBtn').onclick = async () => {
+      const nome = prompt('Nome:');
+      const email = prompt('E-mail:');
+      const senha = prompt('Senha:');
+      const perfil = confirm('RH Matriz?') ? 'RH Matriz' : 'Obra';
+      if (nome && email && senha) {
+        await addUsuario({ nome, email, senha, perfil });
+        await carregarUsuarios();
+      }
+    };
+    
+    await carregarUsuarios();
+  </script>
+</body>
+</html>
