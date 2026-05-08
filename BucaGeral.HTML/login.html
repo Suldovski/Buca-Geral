@@ -1,52 +1,10 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login · Bucagrans</title>
-  <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-  <div class="login">
-    <div class="card login-card">
-      <div class="logo">B</div>
-      <h2>Bucagrans</h2>
-      <p class="sub">Construtora de Obras SA</p>
-      <form id="login-form">
-        <div class="field">
-          <label>E-mail</label>
-          <input type="email" id="email" class="input" placeholder="seu@email.com" required>
-        </div>
-        <div class="field">
-          <label>Senha</label>
-          <input type="password" id="password" class="input" required>
-        </div>
-        <button type="submit" class="btn">Entrar</button>
-      </form>
-      <div id="error-message" class="error" style="margin-top: 16px;"></div>
-    </div>
-  </div>
-
-  <script type="module">
-    import { fazerLogin } from './app.js';
-
-    const form = document.getElementById('login-form');
-    const errorDiv = document.getElementById('error-message');
-
-    form.addEventListener('submit', async (event) => {
-      event.preventDefault();
-      errorDiv.textContent = '';
-
-      const email = document.getElementById('email').value;
-      const password = document.getElementById('password').value;
-
-      const loginSuccess = await fazerLogin(email, password);
-      if (loginSuccess) {
-        window.location.href = 'inicio.html';
-      } else {
-        errorDiv.textContent = 'E-mail ou senha inválidos. Verifique suas credenciais no Firebase.';
-      }
-    });
-  </script>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Login · Bucagrans</title><link rel="stylesheet" href="styles.css"></head>
+<body class="login-page">
+<div class="login-container"><div class="login-card"><div class="logo">B</div><h2>Bucagrans</h2><p class="sub">Construtora de Obras SA</p>
+<form id="loginForm"><div class="field"><label>E-mail</label><input type="email" id="email" class="input" required></div><div class="field"><label>Senha</label><input type="password" id="senha" class="input" required></div><button type="submit" class="btn">Entrar</button></form>
+<div id="errorMsg" class="error"></div></div></div>
+<script type="module">import { fazerLogin } from './app.js'; document.getElementById('loginForm').onsubmit = async (e) => { e.preventDefault(); const ok = await fazerLogin(document.getElementById('email').value, document.getElementById('senha').value); if (ok) window.location.href = 'inicio.html'; else document.getElementById('errorMsg').innerText = 'E-mail ou senha inválidos'; };</script>
 </body>
 </html>

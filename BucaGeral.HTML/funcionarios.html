@@ -1,31 +1,18 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Funcionários · Bucagrans</title>
-  <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-  <div class="app">
-    <div id="sidebar-slot"></div>
-    <main>
-      <h1>Funcionários</h1>
-      <div id="funcionarios-list"></div>
-    </main>
-  </div>
-  <script type="module">
-    import { mountLayout, getFuncionarios, getObras } from './app.js';
-    mountLayout('funcionarios');
-    
-    const obras = await getObras();
-    const funcionarios = await getFuncionarios();
-    const container = document.getElementById('funcionarios-list');
-    
-    container.innerHTML = funcionarios.map(f => {
-      const obraNome = obras.find(o => o.id === f.obraId)?.nome || 'N/A';
-      return `<div class="funcionario-card"><p><strong>${f.nome}</strong> - ${f.cargo} (${obraNome})</p></div>`;
-    }).join('');
-  </script>
-</body>
-</html>
+<head><meta charset="UTF-8"><title>Funcionários · Bucagrans</title><link rel="stylesheet" href="styles.css"></head>
+<body><div class="app"><div id="sidebar-slot"></div><main><div class="page-header"><h1>Funcionários</h1><button class="btn" id="novoFuncBtn">+ Novo Funcionário</button></div>
+<div class="stats-panel" id="statsPanel"></div><div class="filters-bar"><div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><input id="searchInput" class="input" placeholder="Buscar"></div><select id="obraFilter" class="input" style="width:200px"><option value="">Todas as obras</option></select></div>
+<div class="btn-group"><button class="btn" id="importarBtn">📥 Importar</button><button class="btn" id="exportarBtn">📤 Exportar</button><button class="btn btn-danger" id="apagarTodosBtn">🗑️ Apagar Todos</button></div>
+<div class="table-wrap"><table><thead><tr><th>Nome</th><th>Cargo</th><th>Obra</th><th>Tipo</th><th>Situação</th><th>Ações</th></tr></thead><tbody id="tbodyFuncionarios"></tbody></table></div></main></div>
+<script type="module">
+import { mountLayout, getObras, getFuncionarios } from './app.js';
+mountLayout('funcionarios'); let todasObras = [], todosFuncs = [];
+async function carregar() { todasObras = await getObras(); todosFuncs = await getFuncionarios(); const select = document.getElementById('obraFilter'); select.innerHTML = '<option value="">Todas as obras</option>' + todasObras.map(o=>'<option value="'+o.id+'">'+o.nome+'</option>').join(''); renderizarCards(todosFuncs); renderizarTabela(todosFuncs); }
+function renderizarCards(funcs) { const tipos = { 'Total Geral': funcs.length, 'Efetivos': funcs.filter(f=>f.tipoVinculo==='Efetivo').length, 'PJ': funcs.filter(f=>f.tipoVinculo==='PJ').length, 'Operacional': funcs.filter(f=>f.setor==='Operacional').length, 'ADM': funcs.filter(f=>f.setor==='ADM').length, 'Mobilização': funcs.filter(f=>f.tipoVinculo==='Mobilização').length, 'Alteração de Função': funcs.filter(f=>f.tipoVinculo==='Alteração de Função').length, 'Terceiros': funcs.filter(f=>f.tipoVinculo==='Terceiros').length }; const panel = document.getElementById('statsPanel'); panel.innerHTML = ''; for (const [l, v] of Object.entries(tipos)) { const card = document.createElement('div'); card.className = 'stat-card'; card.innerHTML = '<div class="label">'+l+'</div><div class="value">'+v+'</div>'; panel.appendChild(card); } }
+function renderizarTabela(funcs) { const tbody = document.getElementById('tbodyFuncionarios'); tbody.innerHTML = funcs.map(f => { const obraNome = todasObras.find(o=>o.id===f.obraId)?.nome||'N/A'; return '<tr><td class="cell-strong">'+ (f.nome||'') +'</td><td>'+ (f.cargo||'') +'</td><td>'+ obraNome +'</td><td>'+ (f.tipoVinculo||'-') +'</td><td><span class="badge '+(f.situacao==='Ativo'?'on':'')+'">'+(f.situacao||'Ativo')+'</span></td><td><button class="btn btn-sm btn-warning">Editar</button> <button class="btn btn-sm btn-danger">Excluir</button></td></tr>'; }).join(''); }
+document.getElementById('searchInput').addEventListener('input', () => { const term = document.getElementById('searchInput').value.toLowerCase(); const filtrados = todosFuncs.filter(f => f.nome?.toLowerCase().includes(term) || f.cargo?.toLowerCase().includes(term)); renderizarTabela(filtrados); renderizarCards(filtrados); });
+document.getElementById('obraFilter').addEventListener('change', () => { const obraId = document.getElementById('obraFilter').value; const filtrados = obraId ? todosFuncs.filter(f => f.obraId === obraId) : todosFuncs; renderizarTabela(filtrados); renderizarCards(filtrados); });
+await carregar();
+</script>
+</body></html>

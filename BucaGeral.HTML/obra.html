@@ -1,79 +1,27 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Detalhe da Obra · Bucagrans</title>
-  <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-  <div class="app">
-    <div id="sidebar-slot"></div>
-    <main>
-      <a href="obras.html" class="back-link">← Voltar para obras</a>
-      <h1 id="obra-nome">Carregando...</h1>
-      <div id="funcionarios-list"></div>
-      <button id="novo-funcionario-btn">+ Novo Funcionário</button>
-    </main>
-  </div>
-  <div id="modal-funcionario" class="modal">
-    <div class="modal-content">
-      <span class="close">&times;</span>
-      <h3>Novo Funcionário</h3>
-      <form id="form-funcionario">
-        <input type="text" id="func-nome" placeholder="Nome" required>
-        <input type="text" id="func-cargo" placeholder="Cargo" required>
-        <button type="submit">Salvar</button>
-      </form>
-    </div>
-  </div>
-  <script type="module">
-    import { mountLayout, getObras, getFuncionarios, addFuncionario } from './app.js';
-    
-    mountLayout('obras');
-    
-    const urlParams = new URLSearchParams(window.location.search);
-    const obraId = urlParams.get('id');
-    let obra = null;
-    
-    async function carregarObraEFuncionarios() {
-      const obras = await getObras();
-      obra = obras.find(o => o.id === obraId);
-      if (!obra) {
-        document.getElementById('obra-nome').innerText = 'Obra não encontrada';
-        return;
-      }
-      document.getElementById('obra-nome').innerText = obra.nome;
-      
-      const funcionarios = await getFuncionarios(obraId);
-      const container = document.getElementById('funcionarios-list');
-      container.innerHTML = funcionarios.map(f => `
-        <div class="funcionario-card">
-          <p><strong>${f.nome}</strong> - ${f.cargo}</p>
-        </div>
-      `).join('');
-    }
-    
-    await carregarObraEFuncionarios();
-    
-    // Modal para novo funcionário
-    const modal = document.getElementById('modal-funcionario');
-    const btn = document.getElementById('novo-funcionario-btn');
-    const span = document.getElementsByClassName('close')[0];
-    
-    btn.onclick = () => modal.style.display = 'block';
-    span.onclick = () => modal.style.display = 'none';
-    window.onclick = (event) => { if (event.target == modal) modal.style.display = 'none'; };
-    
-    document.getElementById('form-funcionario').onsubmit = async (e) => {
-      e.preventDefault();
-      const nome = document.getElementById('func-nome').value;
-      const cargo = document.getElementById('func-cargo').value;
-      await addFuncionario({ nome, cargo, obraId, ativo: true });
-      modal.style.display = 'none';
-      document.getElementById('form-funcionario').reset();
-      await carregarObraEFuncionarios();
-    };
-  </script>
-</body>
-</html>
+<head><meta charset="UTF-8"><title>Detalhe da Obra · Bucagrans</title><link rel="stylesheet" href="styles.css"></head>
+<body><div class="app"><div id="sidebar-slot"></div><main><a href="obras.html" class="back-link">← Voltar</a><div id="obraNome" class="obra-title">Carregando...</div>
+<div class="stats-panel" id="statsPanel"></div><div class="btn-group"><button class="btn" id="importarBtn">📥 Importar Planilha</button><button class="btn" id="exportarBtn">📤 Exportar Dados</button><button class="btn btn-danger" id="apagarTodosBtn">🗑️ Apagar Todos</button></div>
+<div class="filters-bar"><div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><input id="searchInput" class="input" placeholder="Buscar funcionário"></div></div>
+<div class="btn-group"><button class="btn btn-primary" id="novoFuncionarioBtn">+ Novo Funcionário</button></div>
+<div class="table-wrap"><table><thead><tr><th>RE</th><th>Nome</th><th>Cargo</th><th>Setor</th><th>Tipo</th><th>Admissão</th><th>Situação</th><th>Ações</th></tr></thead><tbody id="tbodyFuncionarios"></tbody></table></div></main></div>
+<div id="modalFunc" class="modal"><div class="modal-content"><div class="modal-header"><h3>Novo Funcionário</h3><span class="close" onclick="fecharModalFunc()">&times;</span></div><form id="formFunc"><div class="field"><label>RE</label><input id="re" class="input"></div><div class="field"><label>Nome *</label><input id="nome" class="input" required></div><div class="field"><label>Cargo *</label><input id="cargo" class="input" required></div><div class="field"><label>Setor</label><select id="setor" class="input"><option>Operacional</option><option>ADM</option></select></div><div class="field"><label>Tipo Vínculo</label><select id="tipoVinculo" class="input"><option>Efetivo</option><option>PJ</option><option>Terceiros</option><option>Mobilização</option><option>Alteração de Função</option></select></div><div class="field"><label>Data Admissão</label><input type="date" id="dataAdmissao" class="input"></div><div class="field"><label>Situação</label><select id="situacao" class="input"><option>Ativo</option><option>Aguarda Exame</option><option>Inativo</option></select></div><div class="dialog-foot"><button type="submit" class="btn">Salvar</button><button type="button" class="btn btn-outline" onclick="fecharModalFunc()">Cancelar</button></div></form></div></div>
+<script type="module">
+import { mountLayout, getObras, getFuncionarios, addFuncionario, deleteFuncionario } from './app.js';
+mountLayout('obras'); const obraId = new URLSearchParams(location.search).get('id'); let todos = [];
+async function carregar() { const obras = await getObras(); const obra = obras.find(o => o.id === obraId); document.getElementById('obraNome').innerHTML = obra?.nome || 'Obra não encontrada'; todos = await getFuncionarios(obraId); renderizarCards(todos); renderizarTabela(todos); }
+function renderizarCards(funcs) { const tipos = { 'Total Geral': funcs.length, 'Efetivos': funcs.filter(f=>f.tipoVinculo==='Efetivo').length, 'PJ': funcs.filter(f=>f.tipoVinculo==='PJ').length, 'Operacional': funcs.filter(f=>f.setor==='Operacional').length, 'ADM': funcs.filter(f=>f.setor==='ADM').length, 'Mobilização': funcs.filter(f=>f.tipoVinculo==='Mobilização').length, 'Alteração de Função': funcs.filter(f=>f.tipoVinculo==='Alteração de Função').length, 'Terceiros': funcs.filter(f=>f.tipoVinculo==='Terceiros').length }; const panel = document.getElementById('statsPanel'); panel.innerHTML = ''; for (const [l, v] of Object.entries(tipos)) { const card = document.createElement('div'); card.className = 'stat-card'; card.innerHTML = '<div class="label">'+l+'</div><div class="value">'+v+'</div>'; panel.appendChild(card); } }
+function renderizarTabela(funcs) { const tbody = document.getElementById('tbodyFuncionarios'); tbody.innerHTML = funcs.map(f => '<tr><td>'+ (f.re||'') +'</td><td class="cell-strong">'+ (f.nome||'') +'</td><td>'+ (f.cargo||'') +'</td><td>'+ (f.setor||'') +'</td><td>'+ (f.tipoVinculo||'') +'</td><td>'+ (f.dataAdmissao?new Date(f.dataAdmissao).toLocaleDateString():'') +'</td><td><span class="badge '+(f.situacao==='Ativo'?'on':'')+'">'+(f.situacao||'Ativo')+'</span></td><td><button class="btn btn-sm btn-warning" onclick="editar(\''+f.id+'\')">Editar</button> <button class="btn btn-sm btn-danger" onclick="excluir(\''+f.id+'\')">Excluir</button></td></tr>').join(''); }
+window.excluir = async (id) => { if(confirm('Excluir?')){ await deleteFuncionario(id); await carregar(); } };
+window.editar = (id) => alert('Edição em breve');
+document.getElementById('searchInput').addEventListener('input', (e) => { const term = e.target.value.toLowerCase(); const filtrados = todos.filter(f => (f.nome?.toLowerCase().includes(term) || f.cargo?.toLowerCase().includes(term))); renderizarTabela(filtrados); renderizarCards(filtrados); });
+document.getElementById('importarBtn').onclick = () => alert('Importação será implementada');
+document.getElementById('exportarBtn').onclick = () => alert('Exportação será implementada');
+document.getElementById('apagarTodosBtn').onclick = () => { if(confirm('Excluir TODOS os funcionários desta obra?')) alert('Função será implementada'); };
+const modal = document.getElementById('modalFunc'); window.fecharModalFunc = () => modal.style.display = 'none';
+document.getElementById('novoFuncionarioBtn').onclick = () => modal.style.display = 'flex';
+document.getElementById('formFunc').addEventListener('submit', async (e) => { e.preventDefault(); await addFuncionario({ re: document.getElementById('re').value, nome: document.getElementById('nome').value, cargo: document.getElementById('cargo').value, setor: document.getElementById('setor').value, tipoVinculo: document.getElementById('tipoVinculo').value, dataAdmissao: document.getElementById('dataAdmissao').value, situacao: document.getElementById('situacao').value, obraId: obraId, ativo: true }); modal.style.display = 'none'; document.getElementById('formFunc').reset(); await carregar(); });
+await carregar();
+</script>
+</body></html>

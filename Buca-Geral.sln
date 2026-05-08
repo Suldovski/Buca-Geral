@@ -1,0 +1,30 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BucaGeral.Api", "BucaGeral.Api\BucaGeral.Api.csproj", "{4595B5AB-69CA-FAA9-B503-3FCF53A1A6A5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BucaGeral.Models", "BucaGeral.Models\BucaGeral.Models.csproj", "{C70AEE5B-6501-2C58-5E2E-CA6DFE3E349E}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{4595B5AB-69CA-FAA9-B503-3FCF53A1A6A5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4595B5AB-69CA-FAA9-B503-3FCF53A1A6A5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4595B5AB-69CA-FAA9-B503-3FCF53A1A6A5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4595B5AB-69CA-FAA9-B503-3FCF53A1A6A5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C70AEE5B-6501-2C58-5E2E-CA6DFE3E349E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C70AEE5B-6501-2C58-5E2E-CA6DFE3E349E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C70AEE5B-6501-2C58-5E2E-CA6DFE3E349E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C70AEE5B-6501-2C58-5E2E-CA6DFE3E349E}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {02467846-1ECB-4A81-AB6B-31B7468DA674}
+	EndGlobalSection
+EndGlobal

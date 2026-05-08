@@ -1,147 +1,46 @@
-// app.js - Lógica unificada
-import { 
-  auth, login, logout, onAuth,
-  getObras, addObra, updateObra, deleteObra,
-  getFuncionarios, addFuncionario, updateFuncionario, deleteFuncionario,
-  getUsuarios, addUsuario, updateUsuario, deleteUsuario
-} from './firebase-config.js';
+import { auth, login, logout, onAuth, getObras, addObra, getFuncionarios, addFuncionario, deleteFuncionario, getUsuarios, addUsuario, getUsuarioByEmail } from './firebase-config.js';
 
-let usuarioLogado = null;
-let todasObras = [];
-let todosFuncionarios = [];
-
-// ==================== AUTENTICAÇÃO ====================
-export async function fazerLogin(email, senha) {
-  try {
-    await login(email, senha);
-    return true;
-  } catch (error) {
-    console.error("Erro no login:", error);
-    return false;
-  }
-}
-
-export async function fazerLogout() {
-  await logout();
-}
-
-// Observador de estado de autenticação (redireciona para login se não autenticado)
-onAuth((user) => {
-  if (user) {
-    usuarioLogado = { uid: user.uid, email: user.email, nome: user.displayName || user.email.split('@')[0] };
-    localStorage.setItem('usuario', JSON.stringify(usuarioLogado));
-    
-    const paginasProtegidas = ['inicio.html', 'obras.html', 'funcionarios.html', 'obra.html', 'usuarios.html'];
-    const isProtegida = paginasProtegidas.some(pagina => window.location.pathname.includes(pagina));
-    
-    if (!isProtegida && !window.location.pathname.includes('login.html')) {
-      window.location.href = 'inicio.html';
-    }
-  } else {
-    localStorage.removeItem('usuario');
-    const paginasProtegidas = ['inicio.html', 'obras.html', 'funcionarios.html', 'obra.html', 'usuarios.html'];
-    const isProtegida = paginasProtegidas.some(pagina => window.location.pathname.includes(pagina));
-    
-    if (isProtegida) {
-      window.location.href = 'login.html';
-    }
-  }
-});
-
-// ==================== SIDEBAR ====================
-function renderSidebar(active) {
-  const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
-  const items = [
-    { url: "inicio.html", label: "Início", id: "inicio", icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 12l9-9 9 9M5 10v10h14V10"/></svg>' },
-    { url: "obras.html", label: "Obras", id: "obras", icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 8h.01M15 8h.01M9 12h.01M15 12h.01"/></svg>' },
-    { url: "funcionarios.html", label: "Funcionários", id: "funcionarios", icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 014-4h4a4 4 0 014 4v2M16 11a4 4 0 100-8M22 21v-2a4 4 0 00-3-3.87"/></svg>' },
-    { url: "usuarios.html", label: "Usuários", id: "usuarios", icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0112 0v1"/></svg>' }
-  ];
-  return `
-    <aside class="sidebar">
-      <div class="sidebar-brand">
-        <div class="logo">B</div>
-        <div><div class="name">Bucagrans</div><div class="sub">Construtora de Obras SA</div></div>
-      </div>
-      <nav class="sidebar-nav">${items.map(i => `<a href="${i.url}" class="${active === i.id ? 'active' : ''}">${i.icon}<span>${i.label}</span></a>`).join('')}</nav>
-      <div class="sidebar-foot">
-        <div class="who">${usuario.nome || 'admin'}</div>
-        <div class="email">${usuario.email || ''}</div>
-        <a href="#" id="logout-button">Sair</a>
-      </div>
-    </aside>
-  `;
-}
+let currentUser = null;
+export async function fazerLogin(email, senha) { try { await login(email, senha); return true; } catch(e) { return false; } }
+export async function fazerLogout() { await logout(); localStorage.clear(); window.location.href = 'login.html'; }
+onAuth(async (user) => { if (user) { const usuarioSistema = await getUsuarioByEmail(user.email); currentUser = { uid: user.uid, email: user.email, nome: usuarioSistema?.nome, perfil: usuarioSistema?.perfil, obraId: usuarioSistema?.obraId }; localStorage.setItem('usuario', JSON.stringify(currentUser)); } else { localStorage.clear(); if (!location.pathname.includes('login.html')) location.href = 'login.html'; } });
 
 export function mountLayout(active) {
-  const slot = document.getElementById("sidebar-slot");
-  if (slot) slot.outerHTML = renderSidebar(active);
-  
-  const logoutBtn = document.getElementById('logout-button');
-  if (logoutBtn) {
-    logoutBtn.onclick = (e) => {
-      e.preventDefault();
-      fazerLogout();
-    };
-  }
+  const user = JSON.parse(localStorage.getItem('usuario') || '{}');
+  const items = [
+    { url: "inicio.html", label: "Início", id: "inicio", icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 12l9-9 9 9M5 10v10h14V10"/></svg>' },
+    { url: "obras.html", label: "Obras", id: "obras", icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 8h.01M15 8h.01"/></svg>' },
+    { url: "funcionarios.html", label: "Funcionários", id: "funcionarios", icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 014-4h4a4 4 0 014 4v2"/></svg>' },
+    { url: "usuarios.html", label: "Usuários", id: "usuarios", icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0112 0v1"/></svg>' }
+  ];
+  const sidebar = '<aside class="sidebar"><div class="sidebar-brand"><div class="logo">B</div><div><div class="name">Bucagrans</div><div class="sub">Construtora de Obras SA</div></div></div><nav class="sidebar-nav">' + items.map(i => '<a href="' + i.url + '" class="' + (active === i.id ? 'active' : '') + '">' + i.icon + '<span>' + i.label + '</span></a>').join('') + '</nav><div class="sidebar-foot"><div class="who">' + (user.nome || 'admin') + '</div><div class="email">' + (user.email || '') + '</div><a href="#" id="logoutBtn" class="btn-logout">Sair</a></div></aside>';
+  const slot = document.getElementById('sidebar-slot'); if (slot) slot.outerHTML = sidebar;
+  document.getElementById('logoutBtn')?.addEventListener('click', (e) => { e.preventDefault(); fazerLogout(); });
 }
 
-// Funções para carregar dados (exemplo para 'inicio.html' e 'obras.html')
-export async function carregarEstatisticas() {
-  const obras = await getObras();
-  const funcionarios = await getFuncionarios();
-  todasObras = obras;
-  todosFuncionarios = funcionarios;
-  
-  const elObras = document.getElementById('total-obras');
-  const elFunc = document.getElementById('total-funcionarios');
-  if (elObras) elObras.textContent = obras.length;
-  if (elFunc) elFunc.textContent = funcionarios.length;
+export async function renderInicio() {
+  const obras = await getObras(); const funcs = await getFuncionarios();
+  document.getElementById('stat-obras').textContent = obras.length;
+  document.getElementById('stat-func').textContent = funcs.length;
+  const meses = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
+  const counts = meses.map((_, i) => funcs.filter(f => f.dataAdmissao && new Date(f.dataAdmissao).getMonth() === i && new Date(f.dataAdmissao).getFullYear() === 2026).length);
+  const max = Math.max(1, ...counts);
+  document.getElementById('bars').innerHTML = meses.map((m, i) => '<div class="col"><div class="bar" style="height:'+((counts[i]/max)*100)+'%"></div><div class="lbl">'+m+'</div></div>').join('');
+  const cargos = {}; funcs.forEach(f => cargos[f.cargo] = (cargos[f.cargo]||0)+1);
+  const sorted = Object.entries(cargos).sort((a,b)=>b[1]-a[1]); const maxC = sorted[0]?.[1]||1;
+  document.getElementById('rank').innerHTML = sorted.map(([c, v]) => '<div class="rank-row"><div class="rank-head"><span>'+c+'</span><span>'+v+'</span></div><div class="bar-track"><div class="bar-fill" style="width:'+(v/maxC*100)+'%"></div></div></div>').join('');
 }
 
 export async function carregarObras() {
-  const obras = await getObras();
-  const funcionarios = await getFuncionarios();
-  todasObras = obras;
-  todosFuncionarios = funcionarios;
-  
-  const container = document.getElementById('obras-list');
-  if (container) {
-    container.innerHTML = obras.map(obra => `
-      <div class="obra-card">
-        <h3>${obra.nome}</h3>
-        <p>${obra.localizacao || 'Localização não informada'}</p>
-        <p>Funcionários: ${funcionarios.filter(f => f.obraId === obra.id).length}</p>
-        <button class="btn-ver-obra" data-id="${obra.id}">Ver Detalhes</button>
-      </div>
-    `).join('');
-    document.querySelectorAll('.btn-ver-obra').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const id = btn.getAttribute('data-id');
-        window.location.href = `obra.html?id=${id}`;
-      });
-    });
-  }
+  const obras = await getObras(); const funcs = await getFuncionarios();
+  const tbody = document.getElementById('tbodyObras'); if (!tbody) return;
+  tbody.innerHTML = obras.map(o => '<tr><td class="cell-strong"><a href="obra.html?id='+o.id+'">'+o.nome+'</a></td><td class="cell-muted">'+ (o.localizacao||'') +'</td><td class="cell-muted">'+ funcs.filter(f=>f.obraId===o.id).length +'</td><td><button class="btn btn-sm" onclick="location.href=\'obra.html?id='+o.id+'\'">Ver</button></td></tr>').join('');
 }
+export async function adicionarObra(nome, localizacao) { await addObra({ nome: nome.toUpperCase(), localizacao: localizacao.toUpperCase(), dataInicio: new Date().toISOString(), ativo: true }); await carregarObras(); }
 
-// Exportar funções necessárias para uso nas páginas HTML
-export { 
-  getObras, 
-  addObra, 
-  getFuncionarios, 
-  addFuncionario, 
-  updateFuncionario, 
-  deleteFuncionario,
-  getUsuarios,
-  addUsuario,
-  updateUsuario,
-  deleteUsuario
-};
-
-// Torna algumas funções acessíveis globalmente para uso em eventos inline no HTML (se necessário)
-window.carregarEstatisticas = carregarEstatisticas;
-window.carregarObras = carregarObras;
-window.mountLayout = mountLayout;
-window.fazerLogout = fazerLogout;
-window.getObras = getObras;
-window.getFuncionarios = getFuncionarios;
+export async function carregarFuncionarios() {
+  const obras = await getObras(); const funcs = await getFuncionarios();
+  const tbody = document.getElementById('tbodyFuncionarios'); if (!tbody) return;
+  tbody.innerHTML = funcs.map(f => { const obraNome = obras.find(o=>o.id===f.obraId)?.nome||'N/A'; return '<tr><td class="cell-strong">'+ (f.nome||'') +'</td><td>'+ (f.cargo||'') +'</td><td>'+ obraNome +'</td><td>'+ (f.tipoVinculo||'-') +'</td><td>'+ (f.dataAdmissao?new Date(f.dataAdmissao).toLocaleDateString():'-') +'</td><td><span class="badge '+(f.situacao==='Ativo'?'on':'')+'">'+(f.situacao||'Ativo')+'</span></td><td><button class="btn btn-sm btn-warning">Editar</button> <button class="btn btn-sm btn-danger">Excluir</button></td></tr>'; }).join('');
+}
+export { getObras, getFuncionarios, addFuncionario, deleteFuncionario, getUsuarios, addUsuario };

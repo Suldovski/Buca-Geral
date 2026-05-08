@@ -1,54 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Obras · Bucagrans</title>
-  <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-  <div class="app">
-    <div id="sidebar-slot"></div>
-    <main>
-      <h1>Obras</h1>
-      <button id="nova-obra-btn">+ Nova Obra</button>
-      <div id="obras-list"></div>
-    </main>
-  </div>
-  <div id="modal-obra" class="modal">
-    <div class="modal-content">
-      <span class="close">&times;</span>
-      <h3>Nova Obra</h3>
-      <form id="form-obra">
-        <input type="text" id="obra-nome" placeholder="Nome da Obra" required>
-        <input type="text" id="obra-localizacao" placeholder="Localização" required>
-        <button type="submit">Salvar</button>
-      </form>
-    </div>
-  </div>
-  <script type="module">
-    import { mountLayout, carregarObras, addObra } from './app.js';
-    
-    mountLayout('obras');
-    await carregarObras();
-    
-    const modal = document.getElementById('modal-obra');
-    const btn = document.getElementById('nova-obra-btn');
-    const span = document.getElementsByClassName('close')[0];
-    
-    btn.onclick = () => modal.style.display = 'block';
-    span.onclick = () => modal.style.display = 'none';
-    window.onclick = (event) => { if (event.target == modal) modal.style.display = 'none'; };
-    
-    document.getElementById('form-obra').onsubmit = async (e) => {
-      e.preventDefault();
-      const nome = document.getElementById('obra-nome').value.toUpperCase();
-      const localizacao = document.getElementById('obra-localizacao').value.toUpperCase();
-      await addObra({ nome, localizacao, ativo: true });
-      modal.style.display = 'none';
-      document.getElementById('form-obra').reset();
-      await carregarObras();
-    };
-  </script>
-</body>
-</html>
+<head><meta charset="UTF-8"><title>Obras · Bucagrans</title><link rel="stylesheet" href="styles.css"></head>
+<body><div class="app"><div id="sidebar-slot"></div><main><div class="page-header"><h1>Obras</h1><button class="btn" id="novaObraBtn">+ Nova Obra</button></div><div class="table-wrap"><table><thead><tr><th>Nome</th><th>Localização</th><th>Funcionários</th><th>Ações</th></tr></thead><tbody id="tbodyObras"></tbody></table></div></main></div>
+<div id="modalObra" class="modal"><div class="modal-content"><div class="modal-header"><h3>Nova Obra</h3><span class="close" onclick="fecharModal()">&times;</span></div><input type="text" id="nomeObra" class="input" placeholder="Nome" style="text-transform:uppercase"><input type="text" id="localizacaoObra" class="input" placeholder="Localização" style="text-transform:uppercase"><div class="dialog-foot"><button id="salvarObraBtn" class="btn">Salvar</button><button class="btn btn-outline" onclick="fecharModal()">Cancelar</button></div></div></div>
+<script type="module">import { mountLayout, carregarObras, adicionarObra } from './app.js'; mountLayout('obras'); await carregarObras(); const modal = document.getElementById('modalObra'); window.fecharModal = () => modal.style.display = 'none'; document.getElementById('novaObraBtn').onclick = () => modal.style.display = 'flex'; document.getElementById('salvarObraBtn').onclick = async () => { await adicionarObra(document.getElementById('nomeObra').value, document.getElementById('localizacaoObra').value); fecharModal(); await carregarObras(); };</script>
+</body></html>
