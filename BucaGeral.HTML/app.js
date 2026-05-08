@@ -224,7 +224,7 @@ function renderTabela(funcionarios) {
   if (isDetalheObra) {
     tbody.innerHTML = funcionarios.map((f) => {
       const admissao = f.dataAdmissao ? new Date(f.dataAdmissao).toLocaleDateString("pt-BR") : "-";
-      const id = escapeHtml(f.id);
+      const id = encodeURIComponent(String(f.id || ""));
       return `
         <tr>
           <td>${escapeHtml(f.re || "-")}</td>
@@ -234,8 +234,8 @@ function renderTabela(funcionarios) {
           <td>${escapeHtml(f.tipoVinculo || "-")}</td>
           <td>${admissao}</td>
           <td>
-            <button class="btn btn-sm btn-warning" onclick="editarFuncionario('${id}')">Editar</button>
-            <button class="btn btn-sm btn-danger" onclick="excluirFuncionario('${id}')">Excluir</button>
+            <button class="btn btn-sm btn-warning" onclick="editarFuncionario(decodeURIComponent('${id}'))">Editar</button>
+            <button class="btn btn-sm btn-danger" onclick="excluirFuncionario(decodeURIComponent('${id}'))">Excluir</button>
           </td>
         </tr>`;
     }).join("");
@@ -244,7 +244,7 @@ function renderTabela(funcionarios) {
 
   tbody.innerHTML = funcionarios.map((f) => {
     const obraNome = funcionariosObras.find((o) => o.id === f.obraId)?.nome || "N/A";
-    const id = escapeHtml(f.id);
+    const id = encodeURIComponent(String(f.id || ""));
     return `
       <tr>
         <td>${escapeHtml(f.re || "-")}</td>
@@ -253,8 +253,8 @@ function renderTabela(funcionarios) {
         <td>${escapeHtml(obraNome)}</td>
         <td>${escapeHtml(f.tipoVinculo || "-")}</td>
         <td>
-          <button class="btn btn-sm btn-warning" onclick="editarFuncionario('${id}')">Editar</button>
-          <button class="btn btn-sm btn-danger" onclick="excluirFuncionario('${id}')">Excluir</button>
+          <button class="btn btn-sm btn-warning" onclick="editarFuncionario(decodeURIComponent('${id}'))">Editar</button>
+          <button class="btn btn-sm btn-danger" onclick="excluirFuncionario(decodeURIComponent('${id}'))">Excluir</button>
         </td>
       </tr>`;
   }).join("");
