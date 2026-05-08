@@ -4,26 +4,43 @@
   <meta charset="UTF-8">
   <title>Detalhe da Obra · Bucagrans</title>
   <link rel="stylesheet" href="styles.css">
+  <style>.stats-panel { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 24px; } .stat-card { flex: 1; min-width: 100px; background: white; border-radius: 12px; padding: 12px 16px; border: 1px solid #e2e8f0; cursor: pointer; } .stat-card .label { font-size: 12px; color: #64748b; } .stat-card .value { font-size: 24px; font-weight: 700; } .btn-group { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; } .filters-bar { display: flex; gap: 16px; margin-bottom: 20px; align-items: flex-end; } .filters-bar .search { flex: 2; position: relative; } .filters-bar .search input { padding-left: 32px; width: 100%; }</style>
 </head>
 <body>
-  <div class="app">
-    <div id="sidebar-slot"></div>
-    <main>
-      <a href="obras.html" class="back-link">← Voltar</a>
-      <h1 id="obraNome">Carregando...</h1>
-      <div class="table-wrap"><table style="width:100%"><thead><tr><th>Nome</th><th>Cargo</th><th>Ações</th></tr></thead><tbody id="tbodyFuncionarios"></tbody><tr></div>
-    </main>
-  </div>
+  <div class="app"><div id="sidebar-slot"></div><main><a href="obras.html" class="back-link">← Voltar</a><h1 id="obraNome">Carregando...</h1>
+    <div class="stats-panel" id="statsPanel"></div>
+    <div class="btn-group"><button class="btn" id="importarBtn">📥 Importar Planilha</button><button class="btn" id="exportarBtn">📤 Exportar Dados</button><button class="btn btn-danger" id="apagarTodosBtn">🗑️ Apagar Todos</button></div>
+    <div class="filters-bar"><div class="search"><svg style="position:absolute; left:10px; top:50%; transform:translateY(-50%); width:16px" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><input id="searchInput" class="input" placeholder="Buscar funcionário"></div></div>
+    <div class="table-wrap"><table style="width:100%"><thead><tr><th>RE</th><th>Nome</th><th>Cargo</th><th>Setor</th><th>Tipo</th><th>Admissão</th><th>Situação</th><th>Ações</th></tr></thead><tbody id="tbodyFuncionarios"></tbody></table></div></main></div>
+  <div id="modalFunc" class="modal"><div class="modal-content"><span class="close" onclick="fecharModalFunc()">&times;</span><h3>Novo Funcionário</h3><form id="formFunc"><div class="field"><label>RE</label><input id="re" class="input"></div><div class="field"><label>Nome</label><input id="nome" class="input" required></div><div class="field"><label>Cargo</label><input id="cargo" class="input" required></div><div class="field"><label>Setor</label><select id="setor" class="select"><option>Operacional</option><option>ADM</option></select></div><div class="field"><label>Tipo Vínculo</label><select id="tipoVinculo" class="select"><option>Efetivo</option><option>PJ</option><option>Terceiros</option><option>Mobilização</option><option>Alteração de Função</option></select></div><div class="field"><label>Data Admissão</label><input type="date" id="dataAdmissao" class="input"></div><div class="field"><label>Situação</label><select id="situacao" class="select"><option>Ativo</option><option>Aguarda Exame</option><option>Inativo</option></select></div><div class="dialog-foot"><button type="submit" class="btn">Salvar</button><button type="button" class="btn btn-outline" onclick="fecharModalFunc()">Cancelar</button></div></form></div></div>
   <script type="module">
-    import { mountLayout, getObras, getFuncionarios } from './app.js';
+    import { mountLayout, getObras, getFuncionarios, addFuncionario, deleteFuncionario } from './app.js';
     mountLayout('obras');
     const id = new URLSearchParams(location.search).get('id');
-    const obras = await getObras();
-    const obra = obras.find(o => o.id === id);
-    if (obra) document.getElementById('obraNome').innerText = obra.nome;
-    const funcs = await getFuncionarios(id);
-    const tbody = document.getElementById('tbodyFuncionarios');
-    tbody.innerHTML = funcs.map(f => '<tr><td>' + (f.nome || '') + '</td><td>' + (f.cargo || '') + '</td><td><button class="btn btn-sm btn-warning">Editar</button></td></tr>').join('');
+    let todasObras = [], todosFuncionarios = [];
+    async function carregar() {
+      todasObras = await getObras(); const obra = todasObras.find(o => o.id === id); document.getElementById('obraNome').innerText = obra ? obra.nome : 'Carregando...';
+      todosFuncionarios = await getFuncionarios(id); renderizarCards(todosFuncionarios); renderizarTabela(todosFuncionarios);
+    }
+    function renderizarCards(funcs) {
+      const tipos = { 'Total Geral': funcs.length, 'Efetivos': funcs.filter(f => f.tipoVinculo === 'Efetivo').length, 'PJ': funcs.filter(f => f.tipoVinculo === 'PJ').length, 'Operacional': funcs.filter(f => f.setor === 'Operacional').length, 'ADM': funcs.filter(f => f.setor === 'ADM').length, 'Mobilização': funcs.filter(f => f.tipoVinculo === 'Mobilização').length, 'Alteração de Função': funcs.filter(f => f.tipoVinculo === 'Alteração de Função').length, 'Terceiros': funcs.filter(f => f.tipoVinculo === 'Terceiros').length };
+      const panel = document.getElementById('statsPanel'); panel.innerHTML = '';
+      for (const [label, value] of Object.entries(tipos)) { const card = document.createElement('div'); card.className = 'stat-card'; card.innerHTML = '<div class="label">' + label + '</div><div class="value">' + value + '</div>'; panel.appendChild(card); }
+    }
+    function renderizarTabela(funcs) {
+      const tbody = document.getElementById('tbodyFuncionarios');
+      tbody.innerHTML = funcs.map(f => '<tr><td class="cell-strong">' + (f.re || '-') + '</td><td class="cell-strong">' + (f.nome || '') + '</td><td class="cell-muted">' + (f.cargo || '') + '</td><td class="cell-muted">' + (f.setor || '-') + '</td><td class="cell-muted">' + (f.tipoVinculo || '-') + '</td><td class="cell-muted">' + (f.dataAdmissao ? new Date(f.dataAdmissao).toLocaleDateString() : '-') + '</td><td class="cell-muted"><span class="badge ' + (f.situacao === 'Ativo' ? 'on' : '') + '">' + (f.situacao || 'Ativo') + '</span></td><td class="cell-muted"><button class="btn btn-sm btn-warning" onclick="editarFunc(\'' + f.id + '\')">Editar</button> <button class="btn btn-sm btn-danger" onclick="excluirFunc(\'' + f.id + '\')">Excluir</button></td></tr>').join('');
+      if (funcs.length === 0) tbody.innerHTML = '<tr><td colspan="8" style="text-align:center">Nenhum funcionário</td></tr>';
+    }
+    document.getElementById('searchInput').addEventListener('input', (e) => { const termo = e.target.value.toLowerCase(); const filtrados = todosFuncionarios.filter(f => (f.nome && f.nome.toLowerCase().includes(termo)) || (f.cargo && f.cargo.toLowerCase().includes(termo))); renderizarTabela(filtrados); renderizarCards(filtrados); });
+    window.excluirFunc = async (id) => { if (confirm('Excluir?')) { await deleteFuncionario(id); await carregar(); } };
+    window.editarFunc = (id) => alert('Edição em breve');
+    document.getElementById('importarBtn').onclick = () => alert('Importação será implementada');
+    document.getElementById('exportarBtn').onclick = () => alert('Exportação será implementada');
+    document.getElementById('apagarTodosBtn').onclick = () => { if (confirm('Excluir TODOS?')) alert('Função será implementada'); };
+    const modal = document.getElementById('modalFunc'); window.fecharModalFunc = () => modal.style.display = 'none';
+    document.getElementById('formFunc').addEventListener('submit', async (e) => { e.preventDefault(); const func = { re: document.getElementById('re').value, nome: document.getElementById('nome').value, cargo: document.getElementById('cargo').value, setor: document.getElementById('setor').value, tipoVinculo: document.getElementById('tipoVinculo').value, dataAdmissao: document.getElementById('dataAdmissao').value, situacao: document.getElementById('situacao').value, obraId: id, ativo: true }; await addFuncionario(func); modal.style.display = 'none'; document.getElementById('formFunc').reset(); await carregar(); });
+    await carregar();
   </script>
 </body>
 </html>
