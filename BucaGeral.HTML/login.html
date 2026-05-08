@@ -1,34 +1,35 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Login · Bucagrans</title>
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <div class="login">
     <div class="card login-card">
       <div class="logo">B</div>
       <h2>Bucagrans</h2>
-      <p class="sub">Entre com sua conta Firebase</p>
+      <p class="sub">Entre na sua conta</p>
       <form id="loginForm">
-        <div class="field">
-          <label for="email">E-mail</label>
-          <input id="email" class="input" type="email" placeholder="seu@email.com" required />
-        </div>
-        <div class="field">
-          <label for="senha">Senha</label>
-          <input id="senha" class="input" type="password" minlength="6" required />
-        </div>
-        <button type="submit" class="btn login-btn">Entrar</button>
+        <div class="field"><label>E-mail</label><input id="email" class="input" type="email" required></div>
+        <div class="field"><label>Senha</label><input id="senha" class="input" type="password" required></div>
+        <button type="submit" class="btn">Entrar</button>
       </form>
-      <div id="erroMsg" class="login-error" role="alert" aria-live="polite"></div>
+      <div id="erroMsg" class="error"></div>
     </div>
   </div>
-
   <script type="module">
-    import './app.js';
+    import { fazerLogin } from './app.js';
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('email').value;
+      const senha = document.getElementById('senha').value;
+      const erroMsg = document.getElementById('erroMsg');
+      const success = await fazerLogin(email, senha);
+      if (!success) erroMsg.innerText = 'E-mail ou senha inválidos';
+    });
   </script>
 </body>
 </html>
