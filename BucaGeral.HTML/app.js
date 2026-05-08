@@ -326,12 +326,12 @@ function initLoginPage() {
       await fazerLogin(email, senha);
     } catch (error) {
       if (erroMsg) erroMsg.textContent = "E-mail ou senha inválidos.";
-      console.error(error?.code || "login-error");
+      console.error("Login error:", error?.code || error?.message || "login-error");
     }
   });
 }
 
-window.editarFuncionario = () => alert("Edição será implementada em breve");
+window.editarFuncionario = (_id) => alert("Edição será implementada em breve");
 window.excluirFuncionario = async (id) => {
   if (!window.confirm("Excluir funcionário?")) return;
   await deleteFuncionario(id);
