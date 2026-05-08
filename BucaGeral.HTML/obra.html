@@ -1,26 +1,311 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-<head><meta charset="UTF-8"><title>Detalhe da Obra · Bucagrans</title><link rel="stylesheet" href="styles.css"></head>
-<body><div class="app"><div id="sidebar-slot"></div><main><a href="obras.html" class="back-link">← Voltar</a><div id="obraNome" class="obra-title">Carregando...</div>
-<div class="stats-panel" id="statsPanel"></div><div class="btn-group"><button class="btn" id="importarBtn">📥 Importar Planilha</button><button class="btn" id="exportarBtn">📤 Exportar Dados</button><button class="btn btn-danger" id="apagarTodosBtn">🗑️ Apagar Todos</button><button class="btn" id="novoFuncionarioBtn">+ Novo Funcionário</button></div>
-<div class="filters-bar"><div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><input id="searchInput" class="input" placeholder="Buscar funcionário"></div></div>
-<div class="table-wrap"><table><thead><tr><th>RE</th><th>Nome</th><th>Função</th><th>Admissão</th><th>Nascimento</th><th>CBO</th><th>Exp.30</th><th>Exp.60</th><th>Salário/Hora</th><th>Salário/Mês</th><th>Setor</th><th>Tipo</th><th>Obra</th><th>Situação</th><th>Ações</th></tr></thead><tbody id="tbodyFuncionarios"></tbody></table></div></main></div>
-<div id="modalFunc" class="modal"><div class="modal-content"><div class="modal-header"><h3>Novo Funcionário</h3><span class="close" onclick="fecharModalFunc()">&times;</span></div><form id="formFunc"><div class="field"><label>RE</label><input id="re" class="input"></div><div class="field"><label>Nome *</label><input id="nome" class="input" required></div><div class="field"><label>Cargo/Função *</label><input id="cargo" class="input" required></div><div class="field"><label>Data Admissão</label><input type="date" id="dataAdmissao" class="input"></div><div class="field"><label>Data Nascimento</label><input type="date" id="nascimento" class="input"></div><div class="field"><label>CBO</label><input id="cbo" class="input"></div><div class="field"><label>Exp.30</label><input type="date" id="exp30" class="input"></div><div class="field"><label>Exp.60</label><input type="date" id="exp60" class="input"></div><div class="field"><label>Salário/Hora</label><input type="number" step="0.01" id="salarioHora" class="input"></div><div class="field"><label>Salário/Mês</label><input type="number" step="0.01" id="salarioMes" class="input"></div><div class="field"><label>Setor</label><select id="setor" class="input"><option>Operacional</option><option>ADM</option></select></div><div class="field"><label>Tipo Vínculo</label><select id="tipoVinculo" class="input"><option>Efetivo</option><option>PJ</option><option>Terceiros</option><option>Mobilização</option><option>Alteração de Função</option></select></div><div class="field"><label>Situação</label><select id="situacao" class="input"><option>Ativo</option><option>Aguarda Exame</option><option>Inativo</option></select></div><div class="dialog-foot"><button type="submit" class="btn">Salvar</button><button type="button" class="btn btn-outline" onclick="fecharModalFunc()">Cancelar</button></div></form></div></div>
-<script type="module">
-import { mountLayout, getObras, getFuncionarios, addFuncionario, deleteFuncionario } from './app.js';
-mountLayout('obras'); const obraId = new URLSearchParams(location.search).get('id'); let todos = [];
-async function carregar() { const obras = await getObras(); const obra = obras.find(o => o.id === obraId); document.getElementById('obraNome').innerHTML = obra?.nome || 'Obra não encontrada'; todos = await getFuncionarios(obraId); renderizarCards(todos); renderizarTabela(todos); }
-function renderizarCards(funcs) { const tipos = { 'Total Geral': funcs.length, 'Efetivos': funcs.filter(f=>f.tipoVinculo==='Efetivo').length, 'PJ': funcs.filter(f=>f.tipoVinculo==='PJ').length, 'Operacional': funcs.filter(f=>f.setor==='Operacional').length, 'ADM': funcs.filter(f=>f.setor==='ADM').length, 'Mobilização': funcs.filter(f=>f.tipoVinculo==='Mobilização').length, 'Alteração de Função': funcs.filter(f=>f.tipoVinculo==='Alteração de Função').length, 'Terceiros': funcs.filter(f=>f.tipoVinculo==='Terceiros').length }; const panel = document.getElementById('statsPanel'); panel.innerHTML = ''; for (const [l, v] of Object.entries(tipos)) { const card = document.createElement('div'); card.className = 'stat-card'; card.innerHTML = '<div class="label">'+l+'</div><div class="value">'+v+'</div>'; panel.appendChild(card); } }
-function renderizarTabela(funcs) { const tbody = document.getElementById('tbodyFuncionarios'); tbody.innerHTML = funcs.map(f => '<tr><td>'+(f.re||'')+'<td>'+(f.nome||'')+'<td>'+(f.cargo||'')+'<td>'+(f.dataAdmissao?new Date(f.dataAdmissao).toLocaleDateString():'')+'<td>'+(f.nascimento?new Date(f.nascimento).toLocaleDateString():'')+'<td>'+(f.cbo||'')+'<td>'+(f.exp30?new Date(f.exp30).toLocaleDateString():'')+'<td>'+(f.exp60?new Date(f.exp60).toLocaleDateString():'')+'<td>'+(f.salarioHora||'')+'<td>'+(f.salarioMes||'')+'<td>'+(f.setor||'')+'<td>'+(f.tipoVinculo||'')+'<td>'+(f.obraId||'')+'<td><span class="badge '+(f.situacao==='Ativo'?'on':'')+'">'+(f.situacao||'Ativo')+'</span><td><button class="btn btn-sm btn-warning" onclick="editar(\''+f.id+'\')">✏️</button> <button class="btn btn-sm btn-danger" onclick="excluir(\''+f.id+'\')">🗑️</button></tr>').join(''); }
-window.excluir = async (id) => { if(confirm('Excluir?')){ await deleteFuncionario(id); await carregar(); } };
-window.editar = (id) => alert('Edição será implementada');
-document.getElementById('searchInput').addEventListener('input', (e) => { const term = e.target.value.toLowerCase(); const filtrados = todos.filter(f => (f.nome?.toLowerCase().includes(term) || f.cargo?.toLowerCase().includes(term))); renderizarTabela(filtrados); renderizarCards(filtrados); });
-document.getElementById('importarBtn').onclick = () => alert('Importação será implementada');
-document.getElementById('exportarBtn').onclick = () => alert('Exportação será implementada');
-document.getElementById('apagarTodosBtn').onclick = () => { if(confirm('Excluir TODOS?')) alert('Função será implementada'); };
-const modal = document.getElementById('modalFunc'); window.fecharModalFunc = () => modal.style.display = 'none';
-document.getElementById('novoFuncionarioBtn').onclick = () => modal.style.display = 'flex';
-document.getElementById('formFunc').addEventListener('submit', async (e) => { e.preventDefault(); await addFuncionario({ re: document.getElementById('re').value, nome: document.getElementById('nome').value, cargo: document.getElementById('cargo').value, dataAdmissao: document.getElementById('dataAdmissao').value, nascimento: document.getElementById('nascimento').value, cbo: document.getElementById('cbo').value, exp30: document.getElementById('exp30').value, exp60: document.getElementById('exp60').value, salarioHora: parseFloat(document.getElementById('salarioHora').value), salarioMes: parseFloat(document.getElementById('salarioMes').value), setor: document.getElementById('setor').value, tipoVinculo: document.getElementById('tipoVinculo').value, situacao: document.getElementById('situacao').value, obraId: obraId, ativo: true }); modal.style.display = 'none'; document.getElementById('formFunc').reset(); await carregar(); });
-await carregar();
-</script>
-</body></html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Detalhe da Obra · Bucagrans</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .stats-panel { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 24px; }
+    .stat-card { flex: 1; min-width: 100px; background: white; border-radius: 12px; padding: 16px; border: 1px solid #e2e8f0; cursor: pointer; text-align: center; transition: all 0.2s; }
+    .stat-card:hover { background: #f8fafc; transform: translateY(-2px); }
+    .stat-card.active { background: #eef2ff; border-color: #3b82f6; }
+    .stat-card .label { font-size: 12px; color: #64748b; margin-bottom: 8px; }
+    .stat-card .value { font-size: 28px; font-weight: 700; color: #0f172a; }
+    .btn-group { display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
+    .filters-bar { display: flex; gap: 16px; margin-bottom: 24px; align-items: flex-end; flex-wrap: wrap; }
+    .filters-bar .search { flex: 2; min-width: 250px; position: relative; }
+    .filters-bar .search input { width: 100%; padding: 10px 12px 10px 36px; border: 1px solid #e2e8f0; border-radius: 8px; }
+    .filters-bar .search svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 16px; color: #94a3b8; }
+    .back-link { display: inline-flex; align-items: center; gap: 6px; margin-bottom: 20px; color: #3b82f6; text-decoration: none; font-size: 14px; }
+    .back-link:hover { text-decoration: underline; }
+    .obra-title { font-size: 28px; font-weight: 600; margin-bottom: 24px; color: #0f172a; }
+    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; }
+    .modal-content { background: white; border-radius: 16px; padding: 24px; width: 90%; max-width: 700px; max-height: 90%; overflow-y: auto; }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .modal-header h3 { margin: 0; font-size: 20px; }
+    .close { cursor: pointer; font-size: 24px; color: #64748b; }
+    .field { margin-bottom: 16px; }
+    .field label { display: block; margin-bottom: 6px; font-weight: 500; font-size: 13px; }
+    .field input, .field select { width: 100%; padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; }
+    .dialog-foot { display: flex; justify-content: flex-end; gap: 12px; margin-top: 20px; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div id="sidebar-slot"></div>
+    <main>
+      <a href="obras.html" class="back-link">← Voltar para obras</a>
+      <div class="obra-title" id="obraNome">Carregando...</div>
+
+      <!-- CARDS OBCAS -->
+      <div class="stats-panel" id="statsPanel"></div>
+
+      <!-- BOTÕES DE AÇÃO -->
+      <div class="btn-group">
+        <button class="btn" id="importarBtn">📥 Importar Planilha</button>
+        <button class="btn" id="exportarBtn">📤 Exportar Dados</button>
+        <button class="btn btn-danger" id="apagarTodosBtn">🗑️ Apagar Todos</button>
+        <button class="btn" id="novoFuncionarioBtn" style="background: #10b981;">➕ Novo Funcionário</button>
+      </div>
+
+      <!-- BARRA DE BUSCA -->
+      <div class="filters-bar">
+        <div class="search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <circle cx="11" cy="11" r="7"/>
+            <path d="M21 21l-4.3-4.3"/>
+          </svg>
+          <input id="searchInput" class="input" type="text" placeholder="Buscar funcionário por nome, cargo ou RE">
+        </div>
+      </div>
+
+      <!-- TABELA DE FUNCIONÁRIOS -->
+      <div class="table-wrap" style="overflow-x: auto;">
+        <table style="width: 100%; min-width: 1200px;">
+          <thead>
+            <tr>
+              <th>RE</th>
+              <th>Nome</th>
+              <th>Cargo</th>
+              <th>Setor</th>
+              <th>Tipo Vínculo</th>
+              <th>Data Admissão</th>
+              <th>Data Nascimento</th>
+              <th>CBO</th>
+              <th>Exp.30</th>
+              <th>Exp.60</th>
+              <th>Salário/Hora</th>
+              <th>Salário/Mês</th>
+              <th>Situação</th>
+              <th width="100">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyFuncionarios"></tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+
+  <!-- MODAL NOVO FUNCIONÁRIO -->
+  <div id="modalFuncionario" class="modal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Cadastrar Novo Funcionário</h3>
+        <span class="close" onclick="fecharModalFuncionario()">&times;</span>
+      </div>
+      <form id="formFuncionario">
+        <div class="form-grid">
+          <div class="field"><label>RE (Registro)</label><input type="text" id="re" class="input"></div>
+          <div class="field"><label>Nome Completo *</label><input type="text" id="nome" class="input" required></div>
+          <div class="field"><label>Função/Cargo *</label><input type="text" id="cargo" class="input" required></div>
+          <div class="field"><label>Setor</label>
+            <select id="setor" class="input">
+              <option value="Operacional">Operacional</option>
+              <option value="ADM">ADM</option>
+            </select>
+          </div>
+          <div class="field"><label>Tipo Vínculo</label>
+            <select id="tipoVinculo" class="input">
+              <option value="Efetivo">Efetivo</option>
+              <option value="PJ">PJ</option>
+              <option value="Terceiros">Terceiros</option>
+              <option value="Mobilização">Mobilização</option>
+              <option value="Alteração de Função">Alteração de Função</option>
+            </select>
+          </div>
+          <div class="field"><label>Data Admissão</label><input type="date" id="dataAdmissao" class="input"></div>
+          <div class="field"><label>Data Nascimento</label><input type="date" id="nascimento" class="input"></div>
+          <div class="field"><label>CBO</label><input type="text" id="cbo" class="input" placeholder="Código Brasileiro de Ocupação"></div>
+          <div class="field"><label>Exp.30 (exame 30 dias)</label><input type="date" id="exp30" class="input"></div>
+          <div class="field"><label>Exp.60 (exame 60 dias)</label><input type="date" id="exp60" class="input"></div>
+          <div class="field"><label>Salário/Hora</label><input type="number" step="0.01" id="salarioHora" class="input" placeholder="R$ 0,00"></div>
+          <div class="field"><label>Salário/Mês</label><input type="number" step="0.01" id="salarioMes" class="input" placeholder="R$ 0,00"></div>
+          <div class="field"><label>Situação</label>
+            <select id="situacao" class="input">
+              <option value="Ativo">Ativo</option>
+              <option value="Aguarda Exame">Aguarda Exame</option>
+              <option value="Inativo">Inativo</option>
+            </select>
+          </div>
+        </div>
+        <div class="dialog-foot">
+          <button type="submit" class="btn">Salvar Funcionário</button>
+          <button type="button" class="btn btn-outline" onclick="fecharModalFuncionario()">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script type="module">
+    import { mountLayout, getObras, getFuncionarios, addFuncionario, deleteFuncionario } from './app.js';
+    
+    mountLayout('obras');
+    
+    const obraId = new URLSearchParams(location.search).get('id');
+    let todosFuncionarios = [];
+    
+    async function carregar() {
+      try {
+        const obras = await getObras();
+        const obra = obras.find(o => o.id === obraId);
+        document.getElementById('obraNome').innerText = obra ? obra.nome : 'Obra não encontrada';
+        
+        todosFuncionarios = await getFuncionarios(obraId);
+        renderizarCards(todosFuncionarios);
+        renderizarTabela(todosFuncionarios);
+      } catch (error) {
+        console.error('Erro ao carregar:', error);
+      }
+    }
+    
+    function renderizarCards(funcionarios) {
+      const tipos = {
+        'Total Geral': funcionarios.length,
+        'Efetivos': funcionarios.filter(f => f.tipoVinculo === 'Efetivo').length,
+        'PJ': funcionarios.filter(f => f.tipoVinculo === 'PJ').length,
+        'Operacional': funcionarios.filter(f => f.setor === 'Operacional').length,
+        'ADM': funcionarios.filter(f => f.setor === 'ADM').length,
+        'Mobilização': funcionarios.filter(f => f.tipoVinculo === 'Mobilização').length,
+        'Alteração de Função': funcionarios.filter(f => f.tipoVinculo === 'Alteração de Função').length,
+        'Terceiros': funcionarios.filter(f => f.tipoVinculo === 'Terceiros').length
+      };
+      
+      const panel = document.getElementById('statsPanel');
+      panel.innerHTML = '';
+      
+      for (const [label, value] of Object.entries(tipos)) {
+        const card = document.createElement('div');
+        card.className = 'stat-card';
+        card.innerHTML = `<div class="label">${label}</div><div class="value">${value}</div>`;
+        card.onclick = () => filtrarPorCategoria(label);
+        panel.appendChild(card);
+      }
+    }
+    
+    function filtrarPorCategoria(categoria) {
+      let filtrados;
+      switch(categoria) {
+        case 'Efetivos': filtrados = todosFuncionarios.filter(f => f.tipoVinculo === 'Efetivo'); break;
+        case 'PJ': filtrados = todosFuncionarios.filter(f => f.tipoVinculo === 'PJ'); break;
+        case 'Operacional': filtrados = todosFuncionarios.filter(f => f.setor === 'Operacional'); break;
+        case 'ADM': filtrados = todosFuncionarios.filter(f => f.setor === 'ADM'); break;
+        case 'Mobilização': filtrados = todosFuncionarios.filter(f => f.tipoVinculo === 'Mobilização'); break;
+        case 'Alteração de Função': filtrados = todosFuncionarios.filter(f => f.tipoVinculo === 'Alteração de Função'); break;
+        case 'Terceiros': filtrados = todosFuncionarios.filter(f => f.tipoVinculo === 'Terceiros'); break;
+        default: filtrados = todosFuncionarios;
+      }
+      renderizarTabela(filtrados);
+    }
+    
+    function renderizarTabela(funcionarios) {
+      const tbody = document.getElementById('tbodyFuncionarios');
+      if (!tbody) return;
+      
+      if (funcionarios.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="14" style="text-align: center; padding: 40px;">Nenhum funcionário cadastrado nesta obra</td></tr>';
+        return;
+      }
+      
+      tbody.innerHTML = funcionarios.map(f => `
+        <tr>
+          <td class="cell-strong">${f.re || '-'}】,
+          <td class="cell-strong">${f.nome || ''}】,
+          <td class="cell-muted">${f.cargo || ''}】,
+          <td class="cell-muted">${f.setor || '-'}】,
+          <td class="cell-muted">${f.tipoVinculo || '-'}】,
+          <td class="cell-muted">${f.dataAdmissao ? new Date(f.dataAdmissao).toLocaleDateString() : '-'}】,
+          <td class="cell-muted">${f.nascimento ? new Date(f.nascimento).toLocaleDateString() : '-'}】,
+          <td class="cell-muted">${f.cbo || '-'}】,
+          <td class="cell-muted">${f.exp30 ? new Date(f.exp30).toLocaleDateString() : '-'}】,
+          <td class="cell-muted">${f.exp60 ? new Date(f.exp60).toLocaleDateString() : '-'}】,
+          <td class="cell-muted">${f.salarioHora ? 'R$ ' + f.salarioHora.toFixed(2) : '-'}】,
+          <td class="cell-muted">${f.salarioMes ? 'R$ ' + f.salarioMes.toFixed(2) : '-'}】,
+          <td class="cell-muted"><span class="badge ${f.situacao === 'Ativo' ? 'on' : ''}">${f.situacao || 'Ativo'}</span>】,
+          <td class="cell-muted">
+            <button class="btn btn-sm btn-warning" onclick="alert('Editar funcionário ${f.id}')" style="margin-right: 5px;">✏️</button>
+            <button class="btn btn-sm btn-danger" onclick="excluirFuncionario('${f.id}')">🗑️</button>
+          】,
+        <td>
+      `).join('');
+    }
+    
+    window.excluirFuncionario = async (id) => {
+      if (confirm('Tem certeza que deseja excluir este funcionário permanentemente?')) {
+        try {
+          await deleteFuncionario(id);
+          await carregar();
+        } catch (error) {
+          console.error('Erro ao excluir:', error);
+          alert('Erro ao excluir funcionário');
+        }
+      }
+    };
+    
+    // Filtro de busca
+    document.getElementById('searchInput').addEventListener('input', (e) => {
+      const termo = e.target.value.toLowerCase();
+      const filtrados = todosFuncionarios.filter(f => 
+        (f.nome && f.nome.toLowerCase().includes(termo)) || 
+        (f.cargo && f.cargo.toLowerCase().includes(termo)) ||
+        (f.re && f.re.toLowerCase().includes(termo))
+      );
+      renderizarTabela(filtrados);
+    });
+    
+    // Botões de ação
+    document.getElementById('importarBtn').onclick = () => alert('📥 Importação de planilha será implementada em breve');
+    document.getElementById('exportarBtn').onclick = () => alert('📤 Exportação de dados será implementada em breve');
+    document.getElementById('apagarTodosBtn').onclick = () => {
+      if (confirm('⚠️ ATENÇÃO: Isso excluirá TODOS os funcionários desta obra. Esta ação não pode ser desfeita!')) {
+        alert('Função de apagar todos será implementada em breve');
+      }
+    };
+    
+    // Modal de novo funcionário
+    const modal = document.getElementById('modalFuncionario');
+    window.fecharModalFuncionario = () => modal.style.display = 'none';
+    
+    document.getElementById('novoFuncionarioBtn').onclick = () => {
+      document.getElementById('formFuncionario').reset();
+      modal.style.display = 'flex';
+    };
+    
+    document.getElementById('formFuncionario').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const funcionario = {
+        re: document.getElementById('re').value,
+        nome: document.getElementById('nome').value,
+        cargo: document.getElementById('cargo').value,
+        setor: document.getElementById('setor').value,
+        tipoVinculo: document.getElementById('tipoVinculo').value,
+        dataAdmissao: document.getElementById('dataAdmissao').value,
+        nascimento: document.getElementById('nascimento').value,
+        cbo: document.getElementById('cbo').value,
+        exp30: document.getElementById('exp30').value,
+        exp60: document.getElementById('exp60').value,
+        salarioHora: parseFloat(document.getElementById('salarioHora').value) || 0,
+        salarioMes: parseFloat(document.getElementById('salarioMes').value) || 0,
+        situacao: document.getElementById('situacao').value,
+        obraId: obraId,
+        ativo: true
+      };
+      
+      try {
+        await addFuncionario(funcionario);
+        modal.style.display = 'none';
+        document.getElementById('formFuncionario').reset();
+        await carregar();
+        alert('Funcionário cadastrado com sucesso!');
+      } catch (error) {
+        console.error('Erro ao cadastrar:', error);
+        alert('Erro ao cadastrar funcionário');
+      }
+    });
+    
+    await carregar();
+  </script>
+</body>
+</html>

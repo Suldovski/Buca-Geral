@@ -1,9 +1,108 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-<head><meta charset="UTF-8"><title>Obras · Bucagrans</title><link rel="stylesheet" href="styles.css"></head>
-<body><div class="app"><div id="sidebar-slot"></div><main><div class="page-header"><h1>Obras</h1><button class="btn" id="novaObraBtn">+ Nova Obra</button></div>
-<div class="table-wrap"><table><thead><tr><th>Nome</th><th>Localização</th><th>Funcionários</th><th>Ações</th></tr></thead><tbody id="tbodyObras"></tbody></table></div></main></div>
-<div id="modalObra" class="modal"><div class="modal-content"><div class="modal-header"><h3>Nova Obra</h3><span class="close" onclick="fecharModal()">&times;</span></div><input type="text" id="nomeObra" class="input" placeholder="Nome" style="text-transform:uppercase"><input type="text" id="localizacaoObra" class="input" placeholder="Localização" style="text-transform:uppercase"><div class="dialog-foot"><button id="salvarObraBtn" class="btn">Salvar</button><button class="btn btn-outline" onclick="fecharModal()">Cancelar</button></div></div></div>
-<div id="modalEditarObra" class="modal"><div class="modal-content"><div class="modal-header"><h3>Editar Obra</h3><span class="close" onclick="fecharModalEditar()">&times;</span></div><input type="hidden" id="editObraId"><input type="text" id="editNomeObra" class="input" placeholder="Nome" style="text-transform:uppercase"><input type="text" id="editLocalizacaoObra" class="input" placeholder="Localização" style="text-transform:uppercase"><div class="dialog-foot"><button id="atualizarObraBtn" class="btn">Salvar</button><button class="btn btn-outline" onclick="fecharModalEditar()">Cancelar</button></div></div></div>
-<script type="module">import { mountLayout, carregarObras, adicionarObra, atualizarObra } from './app.js'; mountLayout('obras'); await carregarObras(); const modal = document.getElementById('modalObra'); const modalEdit = document.getElementById('modalEditarObra'); window.fecharModal = () => modal.style.display = 'none'; window.fecharModalEditar = () => modalEdit.style.display = 'none'; document.getElementById('novaObraBtn').onclick = () => modal.style.display = 'flex'; document.getElementById('salvarObraBtn').onclick = async () => { await adicionarObra(document.getElementById('nomeObra').value, document.getElementById('localizacaoObra').value); fecharModal(); await carregarObras(); }; document.getElementById('atualizarObraBtn').onclick = async () => { await atualizarObra(document.getElementById('editObraId').value, document.getElementById('editNomeObra').value, document.getElementById('editLocalizacaoObra').value); fecharModalEditar(); await carregarObras(); };</script>
-</body></html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Obras · Bucagrans</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; }
+    .modal-content { background: white; border-radius: 16px; padding: 24px; width: 90%; max-width: 500px; }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .close { cursor: pointer; font-size: 24px; }
+    .field { margin-bottom: 16px; }
+    .field label { display: block; margin-bottom: 6px; font-weight: 500; }
+    .field input { width: 100%; padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 8px; }
+    .dialog-foot { display: flex; justify-content: flex-end; gap: 12px; margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div id="sidebar-slot"></div>
+    <main>
+      <div class="page-header">
+        <h1>Obras</h1>
+        <button class="btn" id="novaObraBtn">+ Nova Obra</button>
+      </div>
+      <div class="table-wrap">
+        <table style="width:100%">
+          <thead><tr><th>Nome</th><th>Localização</th><th>Funcionários</th><th>Ações</th></tr></thead>
+          <tbody id="tbodyObras"></tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+
+  <!-- MODAL NOVA OBRA -->
+  <div id="modalObra" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Nova Obra</h3>
+        <span class="close" onclick="fecharModalObra()">&times;</span>
+      </div>
+      <div class="field"><label>Nome</label><input type="text" id="nomeObra" class="input" style="text-transform:uppercase"></div>
+      <div class="field"><label>Localização</label><input type="text" id="localizacaoObra" class="input" style="text-transform:uppercase"></div>
+      <div class="dialog-foot"><button id="salvarObraBtn" class="btn">Salvar</button><button class="btn btn-outline" onclick="fecharModalObra()">Cancelar</button></div>
+    </div>
+  </div>
+
+  <!-- MODAL EDITAR OBRA -->
+  <div id="modalEditarObra" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Editar Obra</h3>
+        <span class="close" onclick="fecharModalEditarObra()">&times;</span>
+      </div>
+      <input type="hidden" id="editObraId">
+      <div class="field"><label>Nome</label><input type="text" id="editNomeObra" class="input" style="text-transform:uppercase"></div>
+      <div class="field"><label>Localização</label><input type="text" id="editLocalizacaoObra" class="input" style="text-transform:uppercase"></div>
+      <div class="dialog-foot"><button id="atualizarObraBtn" class="btn">Salvar</button><button class="btn btn-outline" onclick="fecharModalEditarObra()">Cancelar</button></div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { mountLayout, carregarObras, adicionarObra, atualizarObra } from './app.js';
+    mountLayout('obras');
+    await carregarObras();
+    
+    const modal = document.getElementById('modalObra');
+    const modalEdit = document.getElementById('modalEditarObra');
+    
+    window.fecharModalObra = () => modal.style.display = 'none';
+    window.fecharModalEditarObra = () => modalEdit.style.display = 'none';
+    
+    document.getElementById('novaObraBtn').onclick = () => modal.style.display = 'flex';
+    document.getElementById('salvarObraBtn').onclick = async () => {
+      await adicionarObra(document.getElementById('nomeObra').value, document.getElementById('localizacaoObra').value);
+      fecharModalObra();
+      document.getElementById('nomeObra').value = '';
+      document.getElementById('localizacaoObra').value = '';
+      await carregarObras();
+    };
+    
+    document.getElementById('atualizarObraBtn').onclick = async () => {
+      await atualizarObra(
+        document.getElementById('editObraId').value,
+        document.getElementById('editNomeObra').value,
+        document.getElementById('editLocalizacaoObra').value
+      );
+      fecharModalEditarObra();
+      await carregarObras();
+    };
+    
+    window.editarObra = (id, nome, localizacao) => {
+      document.getElementById('editObraId').value = id;
+      document.getElementById('editNomeObra').value = nome;
+      document.getElementById('editLocalizacaoObra').value = localizacao;
+      modalEdit.style.display = 'flex';
+    };
+    
+    window.excluirObra = async (id) => {
+      if (confirm('Excluir esta obra? Os funcionários vinculados também serão removidos.')) {
+        await deleteObra(id);
+        await carregarObras();
+      }
+    };
+  </script>
+</body>
+</html>
