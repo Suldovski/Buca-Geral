@@ -131,7 +131,7 @@ export function getUsuarioLogado() {
 
 export function isRhMatriz(usuario = getUsuarioLogado()) {
   const perfil = normalizarTextoAcesso(usuario?.perfil);
-  return perfil === "RH MATRIZ";
+  return perfil === "RH MATRIZ" || perfil === "ADMIN";
 }
 
 export function isRhObra(usuario = getUsuarioLogado()) {
