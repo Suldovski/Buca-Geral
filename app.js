@@ -22,7 +22,7 @@ import {
 let usuarioLogado = JSON.parse(localStorage.getItem("usuario") || "null");
 
 function paginaPublica() {
-  return location.pathname.endsWith("/index.html") || location.pathname.endsWith("/login.html") || location.pathname === "/";
+  return location.pathname.endsWith("/index.html") || location.pathname.endsWith("/login.html") || location.pathname === "/" || location.pathname.endsWith("/");
 }
 
 export function requireAuth() {
@@ -34,23 +34,27 @@ export function requireAuth() {
 export async function fazerLogin(email, senha) {
   try {
     const user = await login(email, senha);
-    const usuarioSistema = await getUsuarioByEmail(user.email);
-    if (!usuarioSistema) {
-      await logout();
-      return false;
+    
+    // Tenta buscar dados adicionais no Firestore, mas não é obrigatório
+    let usuarioSistema = null;
+    try {
+      usuarioSistema = await getUsuarioByEmail(user.email);
+    } catch (err) {
+      console.warn("Usuário não encontrado em usuarios_sistema:", err);
     }
 
     usuarioLogado = {
       uid: user.uid,
       email: user.email,
-      nome: usuarioSistema.nome,
-      perfil: usuarioSistema.perfil,
-      obraId: usuarioSistema.obraId || null
+      nome: usuarioSistema?.nome || "Usuário",
+      perfil: usuarioSistema?.perfil || "user",
+      obraId: usuarioSistema?.obraId || null
     };
 
     localStorage.setItem("usuario", JSON.stringify(usuarioLogado));
     return true;
-  } catch {
+  } catch (err) {
+    console.error("Erro no login:", err);
     return false;
   }
 }
