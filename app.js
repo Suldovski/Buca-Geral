@@ -21,6 +21,14 @@ import {
 
 let usuarioLogado = JSON.parse(localStorage.getItem("usuario") || "null");
 
+function normalizarTextoAcesso(valor) {
+  return String(valor || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toUpperCase();
+}
+
 function paginaPublica() {
   return location.pathname.endsWith("/index.html") || location.pathname.endsWith("/login.html") || location.pathname === "/" || location.pathname.endsWith("/");
 }
@@ -117,6 +125,36 @@ export function mountLayout(active) {
   }
 }
 
+export function getUsuarioLogado() {
+  return JSON.parse(localStorage.getItem("usuario") || "null");
+}
+
+export function isRhMatriz(usuario = getUsuarioLogado()) {
+  const perfil = normalizarTextoAcesso(usuario?.perfil);
+  return perfil === "RH MATRIZ";
+}
+
+export function isRhObra(usuario = getUsuarioLogado()) {
+  const perfil = normalizarTextoAcesso(usuario?.perfil);
+  return perfil.startsWith("RH + ");
+}
+
+export function podeAcessarObra(obraId, usuario = getUsuarioLogado()) {
+  if (!obraId) return false;
+  if (isRhMatriz(usuario)) return true;
+  return String(usuario?.obraId || "") === String(obraId);
+}
+
+export function filtrarObrasPorAcesso(obras = [], usuario = getUsuarioLogado()) {
+  if (isRhMatriz(usuario)) return obras;
+  return obras.filter((obra) => podeAcessarObra(obra.id, usuario));
+}
+
+export function filtrarFuncionariosPorAcesso(funcionarios = [], usuario = getUsuarioLogado()) {
+  if (isRhMatriz(usuario)) return funcionarios;
+  return funcionarios.filter((funcionario) => podeAcessarObra(funcionario.obraId, usuario));
+}
+
 function mesKey(date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
 }
@@ -128,7 +166,9 @@ export function normalizarFuncionario(funcionario) {
     funcao,
     cargo: funcao,
     setor: funcionario.setor || "",
-    tipoVinculo: funcionario.tipoVinculo || "Efetivo"
+    tipoVinculo: funcionario.tipoVinculo || "Efetivo",
+    cpf: funcionario.cpf || "",
+    situacao: funcionario.situacao || "Ativo"
   };
 }
 

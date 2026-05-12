@@ -18,15 +18,16 @@
       <div class="filters-bar filters-grid">
         <input id="searchInput" class="input" placeholder="Buscar por nome, função ou RE">
         <select id="obraFilter" class="select"><option value="">Todas as obras</option></select>
-        <button class="btn btn-outline" id="importarBtn">Importar Planilha</button>
+        <button class="btn btn-import" id="importarBtn">📥 Importar Planilha</button>
         <button class="btn btn-outline" id="exportarCsvBtn">Exportar CSV</button>
+        <button class="btn btn-danger" id="apagarTodosBtn">🗑️ Apagar Todos</button>
       </div>
 
       <input id="importFile" type="file" accept=".csv,.xlsx,.xls" hidden>
 
       <div class="table-wrap">
         <table style="min-width:1600px;">
-          <thead><tr><th>RE</th><th>Nome</th><th>Função</th><th>Setor</th><th>Tipo Vínculo</th><th>Admissão</th><th>Nascimento</th><th>CBO</th><th>Exp.30</th><th>Exp.60</th><th>Venc. ASO</th><th>Salário/Hora</th><th>Salário/Mês</th><th>Obra</th><th>Ações</th></tr></thead>
+          <thead><tr><th>RE</th><th>Nome</th><th>CPF</th><th>Função</th><th>Setor</th><th>Tipo Vínculo</th><th>Situação</th><th>Admissão</th><th>Nascimento</th><th>CBO</th><th>Exp.30</th><th>Exp.60</th><th>Venc. ASO</th><th>Salário/Hora</th><th>Salário/Mês</th><th>Obra</th><th>Ações</th></tr></thead>
           <tbody id="tbodyFuncionarios"></tbody>
         </table>
       </div>
@@ -44,9 +45,11 @@
       <form id="formFunc" class="form-grid">
         <div class="field"><label for="re">RE</label><input id="re" class="input"></div>
         <div class="field"><label for="nome">Nome</label><input id="nome" class="input" required></div>
+        <div class="field"><label for="cpf">CPF</label><input id="cpf" class="input"></div>
         <div class="field"><label for="funcao">Função</label><input id="funcao" class="input" required></div>
         <div class="field"><label for="setor">Setor</label><select id="setor" class="select"><option>Operacional</option><option>ADM</option></select></div>
         <div class="field"><label for="tipoVinculo">Tipo vínculo</label><select id="tipoVinculo" class="select"><option>Efetivo</option><option>PJ</option><option>Terceiros</option><option>Mobilização</option><option>Alteração de Função</option></select></div>
+        <div class="field"><label for="situacao">Situação</label><select id="situacao" class="select"><option>Ativo</option><option>Aguarda Exame</option><option>Inativo</option></select></div>
         <div class="field"><label for="obraId">Obra</label><select id="obraId" class="select" required></select></div>
         <div class="field"><label for="dataAdmissao">Data Admissão</label><input id="dataAdmissao" type="date" class="input"></div>
         <div class="field"><label for="nascimento">Data Nascimento</label><input id="nascimento" type="date" class="input"></div>
@@ -97,7 +100,11 @@
       formatarMoeda,
       normalizarFuncionario,
       obterContagensCards,
-      calcularRanking
+      calcularRanking,
+      getUsuarioLogado,
+      filtrarObrasPorAcesso,
+      filtrarFuncionariosPorAcesso,
+      isRhMatriz
     } from './app.js';
 
     mountLayout('funcionarios');
@@ -124,6 +131,8 @@
     let editandoId = null;
     let filtroCard = 'total';
     let previewImportacao = [];
+    const usuarioLogado = getUsuarioLogado();
+    const usuarioRhMatriz = isRhMatriz(usuarioLogado);
 
     function showToast(message, type = 'success') {
       const container = document.getElementById('toastContainer');
@@ -137,6 +146,10 @@
     function preencherSelectObras() {
       document.getElementById('obraFilter').innerHTML = '<option value="">Todas as obras</option>' + obras.map((o) => `<option value="${o.id}">${escapeHtml(o.nome)}</option>`).join('');
       document.getElementById('obraId').innerHTML = obras.map((o) => `<option value="${o.id}">${escapeHtml(o.nome)}</option>`).join('');
+      if (!usuarioRhMatriz && obras[0]) {
+        document.getElementById('obraFilter').value = obras[0].id;
+        document.getElementById('obraFilter').disabled = true;
+      }
     }
 
     function renderCards(base) {
@@ -162,7 +175,7 @@
       const card = CARD_DEFS.find((c) => c.key === filtroCard) || CARD_DEFS[0];
 
       filtrados = funcionarios.filter((f) => {
-        const matchBusca = !termo || (f.nome || '').toLowerCase().includes(termo) || (f.funcao || '').toLowerCase().includes(termo) || (f.re || '').toLowerCase().includes(termo);
+        const matchBusca = !termo || (f.nome || '').toLowerCase().includes(termo) || (f.funcao || '').toLowerCase().includes(termo) || (f.re || '').toLowerCase().includes(termo) || (f.cpf || '').toLowerCase().includes(termo);
         const matchObra = !obraId || f.obraId === obraId;
         return matchBusca && matchObra && card.fn(f);
       });
@@ -178,9 +191,11 @@
         return `<tr>
           <td>${escapeHtml(f.re || '-')}</td>
           <td class="cell-strong">${escapeHtml(f.nome || '-')}</td>
+          <td>${escapeHtml(f.cpf || '-')}</td>
           <td>${escapeHtml(f.funcao || '-')}</td>
           <td>${escapeHtml(f.setor || '-')}</td>
           <td>${escapeHtml(f.tipoVinculo || '-')}</td>
+          <td><span class="badge ${f.situacao === 'Ativo' ? 'on' : ''}">${escapeHtml(f.situacao || 'Ativo')}</span></td>
           <td>${formatarDataBR(f.dataAdmissao)}</td>
           <td>${formatarDataBR(f.nascimento)}</td>
           <td>${escapeHtml(f.cbo || '-')}</td>
@@ -191,13 +206,15 @@
           <td>${formatarMoeda(f.salarioMes)}</td>
           <td>${escapeHtml(obraNome)}</td>
           <td>
-            <button class="btn btn-sm btn-warning" data-edit="${f.id}">Editar</button>
-            <button class="btn btn-sm btn-danger" data-del="${f.id}">Excluir</button>
+            <div class="action-group">
+              <button class="btn btn-sm btn-warning action-btn" title="Editar" data-edit="${f.id}">✏️</button>
+              <button class="btn btn-sm btn-danger action-btn" title="Apagar" data-del="${f.id}">🗑️</button>
+            </div>
           </td>
         </tr>`;
       }).join('');
 
-      if (!filtrados.length) tbody.innerHTML = '<tr><td colspan="15" style="text-align:center">Nenhum funcionário encontrado.</td></tr>';
+      if (!filtrados.length) tbody.innerHTML = '<tr><td colspan="17" style="text-align:center">Nenhum funcionário encontrado.</td></tr>';
     }
 
     function abrirModal(func = null) {
@@ -209,9 +226,11 @@
       document.getElementById('funcModalTitle').textContent = func ? 'Editar Funcionário' : 'Novo Funcionário';
       document.getElementById('re').value = func?.re || '';
       document.getElementById('nome').value = func?.nome || '';
+      document.getElementById('cpf').value = func?.cpf || '';
       document.getElementById('funcao').value = func?.funcao || '';
       document.getElementById('setor').value = func?.setor || 'Operacional';
       document.getElementById('tipoVinculo').value = func?.tipoVinculo || 'Efetivo';
+      document.getElementById('situacao').value = func?.situacao || 'Ativo';
       document.getElementById('obraId').value = func?.obraId || obras[0]?.id || '';
       document.getElementById('dataAdmissao').value = func?.dataAdmissao || '';
       document.getElementById('nascimento').value = func?.nascimento || '';
@@ -234,6 +253,38 @@
       return String(valor || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '');
     }
 
+    function normalizarTexto(valor) {
+      return String(valor || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toUpperCase();
+    }
+
+    function normalizarReBruto(valor) {
+      return normalizarTexto(valor).replace(/\s+/g, '');
+    }
+
+    function normalizarRe(valor) {
+      const re = normalizarReBruto(valor);
+      if (!re || re === 'PJ' || re === 'ASO') return '';
+      return re;
+    }
+
+    function isRePJ(valor) {
+      return normalizarReBruto(valor).includes('PJ');
+    }
+
+    function isReASO(valor) {
+      return normalizarReBruto(valor).includes('ASO');
+    }
+
+    function normalizarSituacao(valor, re = '') {
+      const texto = normalizarTexto(valor);
+      if (!texto || texto === 'ATIVO') {
+        return isReASO(re) ? 'Aguarda Exame' : 'Ativo';
+      }
+      if (texto.includes('AGUARDA EXAME')) return 'Aguarda Exame';
+      if (texto.includes('INATIVO')) return 'Inativo';
+      return 'Ativo';
+    }
+
     function parseNumber(value) {
       const normalized = String(value ?? '').replace(/\./g, '').replace(',', '.').replace(/[^0-9.-]/g, '');
       if (!normalized) return 0;
@@ -243,6 +294,14 @@
 
     function parseDate(value) {
       if (!value) return '';
+      if (typeof value === 'number' && Number.isFinite(value)) {
+        const parsed = XLSX.SSF.parse_date_code(value);
+        if (parsed) {
+          const month = String(parsed.m).padStart(2, '0');
+          const day = String(parsed.d).padStart(2, '0');
+          return `${parsed.y}-${month}-${day}`;
+        }
+      }
       if (value instanceof Date && !Number.isNaN(value.getTime())) return value.toISOString().slice(0, 10);
       const text = String(value).trim();
       if (!text) return '';
@@ -290,30 +349,50 @@
         row[normalizarCabecalho(k)] = v;
       });
 
-      const funcao = String(row.funcao || row.funcao || row.cargo || '').trim();
-      const obraId = obraIdFromLinha({ obraId: row.obraid, obra: row.obra, nomeObra: row.nomeobra });
+      const resolver = (...keys) => {
+        for (const key of keys) {
+          if (row[key] !== undefined && String(row[key]).trim() !== '') return row[key];
+        }
+        return '';
+      };
+
+      const reOriginal = String(resolver('re')).trim();
+      const funcao = String(resolver('funcao', 'cargo')).trim();
+      const obraId = obraIdFromLinha({
+        obraId: resolver('obraid'),
+        obra: resolver('obra'),
+        nomeObra: resolver('nomeobra')
+      });
+      const situacao = normalizarSituacao(resolver('situacao'), reOriginal);
       const funcionario = {
-        re: String(row.re || '').trim(),
-        nome: String(row.nome || '').trim(),
+        re: reOriginal,
+        nome: String(resolver('nome')).trim(),
+        cpf: String(resolver('cpf')).trim(),
         funcao,
         cargo: funcao,
-        setor: String(row.setor || '').trim() || 'Operacional',
-        tipoVinculo: String(row.tipovinculo || row.tipovinculo || '').trim() || 'Efetivo',
-        dataAdmissao: parseDate(row.dataadmissao),
-        nascimento: parseDate(row.datanascimento || row.nascimento),
-        cbo: String(row.cbo || '').trim(),
-        exp30: parseDate(row.exp30),
-        exp60: parseDate(row.exp60),
-        asoVencimento: parseDate(row.vencimentoaso || row.asovencimento),
-        salarioHora: parseNumber(row.salariohora),
-        salarioMes: parseNumber(row.salariomes),
+        setor: String(resolver('setor')).trim() || 'Operacional',
+        tipoVinculo: String(resolver('tipovinculo')).trim() || (isRePJ(reOriginal) ? 'PJ' : 'Efetivo'),
+        situacao,
+        dataAdmissao: parseDate(resolver('datadeadmissao', 'dataadmissao')),
+        nascimento: parseDate(resolver('datanasc', 'datanascimento', 'nascimento')),
+        cbo: String(resolver('cbo')).trim(),
+        exp30: parseDate(resolver('30diasexp30', 'exp30')),
+        exp60: parseDate(resolver('60diasexp60', 'exp60')),
+        asoVencimento: parseDate(resolver('vencimentoaso', 'asovencimento')),
+        salarioHora: parseNumber(resolver('salariohora')),
+        salarioMes: parseNumber(resolver('salariomensal', 'salariomes')),
         obraId,
         criadoEm: new Date().toISOString(),
         ativo: true
       };
 
-      const valido = Boolean(funcionario.nome && funcionario.funcao && funcionario.obraId);
-      return { funcionario, valido, motivo: valido ? '' : 'Nome, Função e Obra são obrigatórios' };
+      if (isReASO(reOriginal) || situacao === 'Aguarda Exame') {
+        funcionario.tipoVinculo = 'Mobilização';
+      }
+
+      const reNormalizado = normalizarRe(funcionario.re);
+      const valido = Boolean(funcionario.nome && funcionario.funcao && funcionario.obraId && (!reNormalizado || reNormalizado.length >= 2));
+      return { funcionario, valido, reNormalizado, motivo: valido ? '' : 'Nome, Função e Obra são obrigatórios' };
     }
 
     function abrirPreviewImportacao(registros) {
@@ -343,6 +422,38 @@
           showToast('Planilha vazia.', 'error');
           return;
         }
+        const mapaRePlanilha = new Map();
+        const mapaReSistema = new Map();
+
+        funcionarios.forEach((f) => {
+          const re = normalizarRe(f.re);
+          if (!re || !f.nome) return;
+          if (!mapaReSistema.has(re)) mapaReSistema.set(re, new Set());
+          mapaReSistema.get(re).add(normalizarTexto(f.nome));
+        });
+
+        registros.forEach((registro, index) => {
+          const re = registro.reNormalizado;
+          if (!re) return;
+          if (!mapaRePlanilha.has(re)) mapaRePlanilha.set(re, []);
+          mapaRePlanilha.get(re).push({ index, nome: registro.funcionario.nome });
+        });
+
+        const resDuplicados = [...mapaRePlanilha.entries()].filter(([, itens]) => itens.length > 1);
+        if (resDuplicados.length) {
+          showToast(`Importação bloqueada: ${resDuplicados.length} RE(s) duplicados na planilha.`, 'error');
+          return;
+        }
+
+        const conflitos = [...mapaRePlanilha.entries()].filter(([re, itens]) => {
+          const nomesSistema = mapaReSistema.get(re);
+          if (!nomesSistema) return false;
+          return itens.some((item) => !nomesSistema.has(normalizarTexto(item.nome)));
+        });
+
+        if (conflitos.length) {
+          showToast(`Atenção: ${conflitos.length} RE(s) já existem com nomes diferentes no sistema.`, 'error');
+        }
         abrirPreviewImportacao(registros);
       } catch (error) {
         console.error(error);
@@ -368,10 +479,12 @@
       const payload = {
         re: document.getElementById('re').value.trim(),
         nome: document.getElementById('nome').value.trim(),
+        cpf: document.getElementById('cpf').value.trim(),
         funcao,
         cargo: funcao,
         setor: document.getElementById('setor').value,
         tipoVinculo: document.getElementById('tipoVinculo').value,
+        situacao: normalizarSituacao(document.getElementById('situacao').value, document.getElementById('re').value.trim()),
         obraId: document.getElementById('obraId').value,
         dataAdmissao: document.getElementById('dataAdmissao').value,
         nascimento: document.getElementById('nascimento').value,
@@ -429,14 +542,27 @@
       previewImportacao = [];
     });
 
+    document.getElementById('apagarTodosBtn').addEventListener('click', async () => {
+      if (!filtrados.length) {
+        showToast('Não há funcionários para apagar.', 'error');
+        return;
+      }
+      const escopo = isRhMatriz(usuarioLogado) ? 'todos os funcionários filtrados' : 'todos os funcionários da sua obra';
+      if (!confirm(`Tem certeza que deseja apagar ${escopo}?`)) return;
+      await Promise.all(filtrados.map((f) => deleteFuncionario(f.id)));
+      showToast(`${filtrados.length} funcionário(s) removido(s).`);
+    });
+
     document.getElementById('exportarCsvBtn').addEventListener('click', () => {
       const obraMap = new Map(obras.map((obra) => [obra.id, obra.nome || '']));
-      exportarCSV('funcionarios.csv', ['re', 'nome', 'funcao', 'setor', 'tipoVinculo', 'dataAdmissao', 'nascimento', 'cbo', 'exp30', 'exp60', 'asoVencimento', 'salarioHora', 'salarioMes', 'obra'], filtrados.map((f) => ({
+      exportarCSV('funcionarios.csv', ['re', 'nome', 'cpf', 'funcao', 'setor', 'tipoVinculo', 'situacao', 'dataAdmissao', 'nascimento', 'cbo', 'exp30', 'exp60', 'asoVencimento', 'salarioHora', 'salarioMes', 'obra'], filtrados.map((f) => ({
         re: f.re || '',
         nome: f.nome || '',
+        cpf: f.cpf || '',
         funcao: f.funcao || '',
         setor: f.setor || '',
         tipoVinculo: f.tipoVinculo || '',
+        situacao: f.situacao || '',
         dataAdmissao: f.dataAdmissao || '',
         nascimento: f.nascimento || '',
         cbo: f.cbo || '',
@@ -450,13 +576,13 @@
     });
 
     subscribeObras((data) => {
-      obras = data;
+      obras = filtrarObrasPorAcesso(data, usuarioLogado);
       preencherSelectObras();
       aplicarFiltros();
     });
 
     subscribeFuncionarios(null, (data) => {
-      funcionarios = data.map(normalizarFuncionario);
+      funcionarios = filtrarFuncionariosPorAcesso(data.map(normalizarFuncionario), usuarioLogado);
       aplicarFiltros();
     });
   </script>

@@ -26,7 +26,7 @@
       <form id="formUsuario" class="form-grid">
         <div class="field"><label for="usuarioNome">Nome</label><input id="usuarioNome" class="input" required></div>
         <div class="field"><label for="usuarioEmail">E-mail</label><input id="usuarioEmail" class="input" type="email" required></div>
-        <div class="field"><label for="usuarioPerfil">Perfil</label><select id="usuarioPerfil" class="select"><option>RH Matriz</option><option>Obra</option></select></div>
+        <div class="field"><label for="usuarioPerfil">Perfil</label><select id="usuarioPerfil" class="select"><option value="RH Matriz">RH Matriz</option></select></div>
         <div class="field"><label for="usuarioObraId">Obra</label><select id="usuarioObraId" class="select"><option value="">Sem vínculo</option></select></div>
         <div class="field" id="senhaField"><label for="usuarioSenha">Senha inicial</label><input id="usuarioSenha" class="input" type="password"></div>
         <div class="dialog-foot">
@@ -38,7 +38,7 @@
   </div>
 
   <script type="module">
-    import { mountLayout, subscribeUsuarios, subscribeObras, addUsuario, updateUsuario, deleteUsuario, escapeHtml } from './app.js';
+    import { mountLayout, subscribeUsuarios, subscribeObras, addUsuario, updateUsuario, deleteUsuario, escapeHtml, getUsuarioLogado, isRhMatriz } from './app.js';
 
     mountLayout('usuarios');
 
@@ -51,10 +51,20 @@
     let usuarios = [];
     let obras = [];
     let editandoId = null;
+    const usuarioLogado = getUsuarioLogado();
+
+    if (!isRhMatriz(usuarioLogado)) {
+      alert('Somente RH Matriz pode gerenciar usuários.');
+      window.location.href = 'inicio.html';
+    }
 
     function preencherObrasSelect() {
       const html = '<option value="">Sem vínculo</option>' + obras.map((o) => `<option value="${o.id}">${escapeHtml(o.nome)}</option>`).join('');
       document.getElementById('usuarioObraId').innerHTML = html;
+      document.getElementById('usuarioPerfil').innerHTML = ['<option value="RH Matriz">RH Matriz</option>', ...obras.map((o) => {
+        const perfilAcesso = o.perfilAcesso || `RH + ${o.nome}`;
+        return `<option value="${escapeHtml(perfilAcesso)}">${escapeHtml(perfilAcesso)}</option>`;
+      })].join('');
     }
 
     function render() {
@@ -66,8 +76,10 @@
           <td>${escapeHtml(u.perfil || '-')}</td>
           <td>${escapeHtml(obraNome)}</td>
           <td>
-            <button class="btn btn-sm btn-warning" data-edit="${u.id}">Editar</button>
-            <button class="btn btn-sm btn-danger" data-del="${u.id}">Excluir</button>
+            <div class="action-group">
+              <button class="btn btn-sm btn-warning action-btn" title="Editar" data-edit="${u.id}">✏️</button>
+              <button class="btn btn-sm btn-danger action-btn" title="Apagar" data-del="${u.id}">🗑️</button>
+            </div>
           </td>
         </tr>`;
       }).join('');
@@ -84,7 +96,13 @@
       document.getElementById('usuarioNome').value = usuario?.nome || '';
       document.getElementById('usuarioEmail').value = usuario?.email || '';
       document.getElementById('usuarioEmail').disabled = !!usuario;
-      document.getElementById('usuarioPerfil').value = usuario?.perfil || 'Obra';
+      const perfilAtual = usuario?.perfil || 'RH Matriz';
+      if (perfilAtual === 'Obra' && usuario?.obraId) {
+        const obraPerfil = obras.find((o) => o.id === usuario.obraId)?.perfilAcesso || `RH + ${obras.find((o) => o.id === usuario.obraId)?.nome || ''}`;
+        document.getElementById('usuarioPerfil').value = obraPerfil;
+      } else {
+        document.getElementById('usuarioPerfil').value = perfilAtual;
+      }
       document.getElementById('usuarioObraId').value = usuario?.obraId || '';
       document.getElementById('usuarioSenha').value = '';
       modal.style.display = 'flex';
@@ -105,7 +123,13 @@
       const nome = document.getElementById('usuarioNome').value.trim();
       const email = document.getElementById('usuarioEmail').value.trim();
       const perfil = document.getElementById('usuarioPerfil').value;
-      const obraId = document.getElementById('usuarioObraId').value || null;
+      const obraIdCampo = document.getElementById('usuarioObraId').value || null;
+      const obraId = perfil === 'RH Matriz' ? null : obraIdCampo;
+
+      if (perfil !== 'RH Matriz' && !obraId) {
+        alert('Selecione a obra para perfis RH + Obra.');
+        return;
+      }
 
       if (editandoId) {
         await updateUsuario(editandoId, { nome, perfil, obraId });
@@ -143,6 +167,13 @@
     subscribeUsuarios((data) => {
       usuarios = data;
       render();
+    });
+
+    document.getElementById('usuarioObraId').addEventListener('change', (event) => {
+      if (!event.target.value) return;
+      const obra = obras.find((o) => o.id === event.target.value);
+      if (!obra) return;
+      document.getElementById('usuarioPerfil').value = `RH + ${obra.nome}`;
     });
   </script>
 </body>
