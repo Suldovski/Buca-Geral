@@ -13,7 +13,7 @@
       <div class="page-header"><h1>Obras</h1><button class="btn" id="novaObraBtn">+ Nova Obra</button></div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Nome da obra</th><th>Localização</th><th>Funcionários</th><th>Acessar</th><th>Ações</th></tr></thead>
+          <thead><tr><th>Nome da obra</th><th>Localização</th><th>Funcionários</th><th>Ações</th></tr></thead>
           <tbody id="tbodyObras"></tbody>
         </table>
       </div>
@@ -37,7 +37,19 @@
   <div id="toastContainer" class="toast-container"></div>
 
   <script type="module">
-    import { mountLayout, subscribeObras, subscribeFuncionarios, addObra, updateObra, deleteObra, escapeHtml } from './app.js';
+    import {
+      mountLayout,
+      subscribeObras,
+      subscribeFuncionarios,
+      addObra,
+      updateObra,
+      deleteObra,
+      escapeHtml,
+      getUsuarioLogado,
+      filtrarObrasPorAcesso,
+      filtrarFuncionariosPorAcesso,
+      isRhMatriz
+    } from './app.js';
 
     mountLayout('obras');
 
@@ -49,6 +61,12 @@
     let obras = [];
     let funcionarios = [];
     let editandoId = null;
+    const usuarioLogado = getUsuarioLogado();
+    const usuarioRhMatriz = isRhMatriz(usuarioLogado);
+
+    if (!usuarioRhMatriz) {
+      document.getElementById('novaObraBtn').style.display = 'none';
+    }
 
     function showToast(message, type = 'success') {
       const container = document.getElementById('toastContainer');
@@ -77,18 +95,19 @@
       tbody.innerHTML = obras.map((obra) => {
         const totalFunc = funcionarios.filter((f) => f.obraId === obra.id).length;
         return `<tr>
-          <td class="cell-strong">${escapeHtml(obra.nome || '-')}</td>
+          <td class="cell-strong"><a href="obra-[id].html?id=${encodeURIComponent(obra.id)}">${escapeHtml(obra.nome || '-')}</a></td>
           <td class="cell-muted">${escapeHtml(obra.localizacao || '-')}</td>
           <td>${totalFunc}</td>
-          <td><a class="btn btn-sm" href="obra-[id].html?id=${encodeURIComponent(obra.id)}">Abrir tela da obra</a></td>
           <td>
-            <button class="btn btn-sm btn-warning" data-edit="${obra.id}">Editar</button>
-            <button class="btn btn-sm btn-danger" data-del="${obra.id}">Excluir</button>
+            <div class="action-group">
+              <button class="btn btn-sm btn-warning action-btn" title="Editar" data-edit="${obra.id}" ${usuarioRhMatriz ? '' : 'disabled'}>✏️</button>
+              <button class="btn btn-sm btn-danger action-btn" title="Apagar" data-del="${obra.id}" ${usuarioRhMatriz ? '' : 'disabled'}>🗑️</button>
+            </div>
           </td>
         </tr>`;
       }).join('');
 
-      if (!obras.length) tbody.innerHTML = '<tr><td colspan="5" style="text-align:center">Nenhuma obra cadastrada.</td></tr>';
+      if (!obras.length) tbody.innerHTML = '<tr><td colspan="4" style="text-align:center">Nenhuma obra cadastrada.</td></tr>';
     }
 
     document.getElementById('novaObraBtn').addEventListener('click', () => abrirModal());
@@ -96,9 +115,14 @@
 
     form.addEventListener('submit', async (event) => {
       event.preventDefault();
+      if (!usuarioRhMatriz) {
+        showToast('Somente RH Matriz pode criar/editar obras.', 'error');
+        return;
+      }
       const payload = {
         nome: document.getElementById('nomeObra').value.trim().toUpperCase(),
         localizacao: document.getElementById('localizacaoObra').value.trim().toUpperCase(),
+        perfilAcesso: `RH + ${document.getElementById('nomeObra').value.trim().toUpperCase()}`,
         criadoEm: new Date().toISOString(),
         ativo: true
       };
@@ -115,6 +139,7 @@
     });
 
     tbody.addEventListener('click', async (event) => {
+      if (!usuarioRhMatriz) return;
       const idEdit = event.target.getAttribute('data-edit');
       if (idEdit) {
         abrirModal(obras.find((o) => o.id === idEdit));
@@ -129,12 +154,12 @@
     });
 
     subscribeObras((data) => {
-      obras = data;
+      obras = filtrarObrasPorAcesso(data, usuarioLogado);
       render();
     });
 
     subscribeFuncionarios(null, (data) => {
-      funcionarios = data;
+      funcionarios = filtrarFuncionariosPorAcesso(data, usuarioLogado);
       render();
     });
   </script>
