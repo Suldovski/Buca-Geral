@@ -16,7 +16,8 @@ import {
   subscribeUsuarios,
   addUsuario,
   updateUsuario,
-  deleteUsuario
+  deleteUsuario,
+  resetSenha
 } from "./firebase-config.js";
 
 let usuarioLogado = JSON.parse(localStorage.getItem("usuario") || "null");
@@ -136,7 +137,7 @@ export function isRhMatriz(usuario = getUsuarioLogado()) {
 
 export function isRhObra(usuario = getUsuarioLogado()) {
   const perfil = normalizarTextoAcesso(usuario?.perfil);
-  return perfil.startsWith("RH + ");
+  return perfil.startsWith("RH ") && !perfil.startsWith("RH MATRIZ");
 }
 
 export function podeAcessarObra(obraId, usuario = getUsuarioLogado()) {
@@ -279,5 +280,6 @@ export {
   subscribeUsuarios,
   addUsuario,
   updateUsuario,
-  deleteUsuario
+  deleteUsuario,
+  resetSenha
 };

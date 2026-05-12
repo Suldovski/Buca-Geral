@@ -41,9 +41,11 @@
       mountLayout,
       subscribeObras,
       subscribeFuncionarios,
+      subscribeUsuarios,
       addObra,
       updateObra,
       deleteObra,
+      updateUsuario,
       escapeHtml,
       getUsuarioLogado,
       filtrarObrasPorAcesso,
@@ -60,6 +62,7 @@
 
     let obras = [];
     let funcionarios = [];
+    let usuarios = [];
     let editandoId = null;
     const usuarioLogado = getUsuarioLogado();
     const usuarioRhMatriz = isRhMatriz(usuarioLogado);
@@ -122,7 +125,7 @@
       const payload = {
         nome: document.getElementById('nomeObra').value.trim().toUpperCase(),
         localizacao: document.getElementById('localizacaoObra').value.trim().toUpperCase(),
-        perfilAcesso: `RH + ${document.getElementById('nomeObra').value.trim().toUpperCase()}`,
+        perfilAcesso: `RH ${document.getElementById('nomeObra').value.trim().toUpperCase()}`,
         criadoEm: new Date().toISOString(),
         ativo: true
       };
@@ -147,9 +150,11 @@
       }
 
       const idDel = event.target.getAttribute('data-del');
-      if (idDel && confirm('Excluir esta obra?')) {
+      if (idDel && confirm('Excluir esta obra? Os usuários vinculados ficarão sem perfil e sem obra.')) {
+        const usuariosVinculados = usuarios.filter((u) => u.obraId === idDel);
+        await Promise.all(usuariosVinculados.map((u) => updateUsuario(u.id, { obraId: null, perfil: null })));
         await deleteObra(idDel);
-        showToast('Obra excluída.');
+        showToast('Obra excluída. Usuários vinculados foram desvinculados.');
       }
     });
 
@@ -161,6 +166,10 @@
     subscribeFuncionarios(null, (data) => {
       funcionarios = filtrarFuncionariosPorAcesso(data, usuarioLogado);
       render();
+    });
+
+    subscribeUsuarios((data) => {
+      usuarios = data;
     });
   </script>
 </body>
