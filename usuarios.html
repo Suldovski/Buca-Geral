@@ -166,20 +166,20 @@
       const obraId = perfil === 'RH Matriz' ? null : obraIdCampo;
 
       if (perfil !== 'RH Matriz' && !obraId) {
-        alert('Selecione a obra para perfis de obra.');
+        showToast('Selecione a obra para perfis de obra.', 'error');
         return;
       }
 
       if (editandoId) {
         if (!usuarioRhMatriz) {
-          alert('Somente admin ou RH Matriz pode alterar usuários existentes.');
+          showToast('Somente admin ou RH Matriz pode alterar usuários existentes.', 'error');
           return;
         }
         await updateUsuario(editandoId, { nome, perfil, obraId });
       } else {
         const senha = document.getElementById('usuarioSenha').value;
         if (!senha) {
-          alert('Informe a senha inicial.');
+          showToast('Informe a senha inicial.', 'error');
           return;
         }
         await addUsuario({ nome, email, perfil, obraId, senha });
