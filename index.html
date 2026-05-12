@@ -2,9 +2,45 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Bucagrans</title>
-  <script>window.location.href = "login.html";</script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login · Bucagrans</title>
+  <link rel="stylesheet" href="styles.css">
 </head>
-<body></body>
+<body>
+  <div class="login">
+    <div class="card login-card">
+      <div class="logo">B</div>
+      <h2>Bucagrans</h2>
+      <p class="sub">Controle RH centralizado</p>
+      <form id="login-form">
+        <div class="field"><label for="email">E-mail</label><input type="email" id="email" class="input" required></div>
+        <div class="field"><label for="password">Senha</label><input type="password" id="password" class="input" required></div>
+        <button type="submit" class="btn">Entrar</button>
+      </form>
+      <div id="error-message" class="error"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { fazerLogin } from './app.js';
+
+    const form = document.getElementById('login-form');
+    const errorDiv = document.getElementById('error-message');
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      errorDiv.textContent = 'Aguarde...';
+
+      const email = document.getElementById('email').value.trim();
+      const senha = document.getElementById('password').value;
+      const ok = await fazerLogin(email, senha);
+
+      if (ok) {
+        location.href = 'dashboard.html';
+      } else {
+        errorDiv.textContent = 'E-mail ou senha inválidos.';
+      }
+    });
+  </script>
+</body>
 </html>

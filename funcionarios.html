@@ -1,49 +1,194 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Funcionários · Bucagrans</title>
   <link rel="stylesheet" href="styles.css">
-  <style>.stats-panel { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 24px; } .stat-card { flex: 1; min-width: 100px; background: white; border-radius: 12px; padding: 12px 16px; border: 1px solid #e2e8f0; cursor: pointer; } .stat-card .label { font-size: 12px; color: #64748b; } .stat-card .value { font-size: 24px; font-weight: 700; } .btn-group { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; } .filters-bar { display: flex; gap: 16px; margin-bottom: 20px; align-items: flex-end; } .filters-bar .search { flex: 2; position: relative; } .filters-bar .search input { padding-left: 32px; width: 100%; }</style>
 </head>
 <body>
-  <div class="app"><div id="sidebar-slot"></div><main>
-    <div class="page-header"><h1>Funcionários</h1><button class="btn" id="novoFuncBtn">+ Novo Funcionário</button></div>
-    <div class="stats-panel" id="statsPanel"></div>
-    <div class="filters-bar"><div class="search"><svg style="position:absolute; left:10px; top:50%; transform:translateY(-50%); width:16px" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><input id="searchInput" class="input" placeholder="Buscar funcionário"></div><select id="obraFilter" class="select"><option value="">Todas as obras</option></select></div>
-    <div class="btn-group"><button class="btn" id="importarBtn">📥 Importar Planilha</button><button class="btn" id="exportarBtn">📤 Exportar Dados</button><button class="btn btn-danger" id="apagarTodosBtn">🗑️ Apagar Todos</button></div>
-    <div class="table-wrap"><table style="width:100%"><thead><tr><th>RE</th><th>Nome</th><th>Cargo</th><th>Obra</th><th>Tipo</th><th>Admissão</th><th>Situação</th><th>Ações</th></tr></thead><tbody id="tbodyFuncionarios"></tbody></table></div></main></div>
-  <div id="modalFunc" class="modal"><div class="modal-content"><span class="close" onclick="fecharModalFunc()">&times;</span><h3>Novo Funcionário</h3><form id="formFunc"><div class="field"><label>RE</label><input id="re" class="input"></div><div class="field"><label>Nome</label><input id="nome" class="input" required></div><div class="field"><label>Cargo</label><input id="cargo" class="input" required></div><div class="field"><label>Setor</label><select id="setor" class="select"><option>Operacional</option><option>ADM</option></select></div><div class="field"><label>Obra</label><select id="obraId" class="select" required></select></div><div class="field"><label>Tipo Vínculo</label><select id="tipoVinculo" class="select"><option>Efetivo</option><option>PJ</option><option>Terceiros</option><option>Mobilização</option><option>Alteração de Função</option></select></div><div class="field"><label>Data Admissão</label><input type="date" id="dataAdmissao" class="input"></div><div class="field"><label>Situação</label><select id="situacao" class="select"><option>Ativo</option><option>Aguarda Exame</option><option>Inativo</option></select></div><div class="dialog-foot"><button type="submit" class="btn">Salvar</button><button type="button" class="btn btn-outline" onclick="fecharModalFunc()">Cancelar</button></div></form></div></div>
+  <div class="app">
+    <div id="sidebar-slot"></div>
+    <main>
+      <div class="page-header"><h1>Funcionários</h1><button class="btn" id="novoFuncBtn">+ Novo Funcionário</button></div>
+
+      <div class="filters-bar filters-grid">
+        <input id="searchInput" class="input" placeholder="Buscar por nome ou cargo">
+        <select id="obraFilter" class="select"><option value="">Todas as obras</option></select>
+        <select id="cargoFilter" class="select"><option value="">Todos os cargos</option></select>
+        <button class="btn btn-outline" id="exportarCsvBtn">Exportar CSV</button>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>RE</th><th>Nome</th><th>Cargo</th><th>Obra</th><th>Tipo</th><th>Situação</th><th>Ações</th></tr></thead>
+          <tbody id="tbodyFuncionarios"></tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+
+  <div id="modalFunc" class="modal">
+    <div class="modal-content">
+      <h3 id="funcModalTitle">Novo Funcionário</h3>
+      <form id="formFunc" class="form-grid">
+        <div class="field"><label for="re">RE</label><input id="re" class="input"></div>
+        <div class="field"><label for="nome">Nome</label><input id="nome" class="input" required></div>
+        <div class="field"><label for="cargo">Cargo</label><input id="cargo" class="input" required></div>
+        <div class="field"><label for="obraId">Obra</label><select id="obraId" class="select" required></select></div>
+        <div class="field"><label for="tipoVinculo">Tipo vínculo</label><select id="tipoVinculo" class="select"><option>Efetivo</option><option>PJ</option><option>Terceiros</option><option>Mobilização</option><option>Alteração de Função</option></select></div>
+        <div class="field"><label for="situacao">Situação</label><select id="situacao" class="select"><option>Ativo</option><option>Aguarda Exame</option><option>Inativo</option></select></div>
+        <div class="dialog-foot">
+          <button type="button" class="btn btn-outline" id="cancelarFuncBtn">Cancelar</button>
+          <button type="submit" class="btn">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script type="module">
-    import { mountLayout, getObras, getTodosFuncionarios, addFuncionario, deleteFuncionario } from './app.js';
+    import { mountLayout, subscribeObras, subscribeFuncionarios, addFuncionario, updateFuncionario, deleteFuncionario, exportarCSV } from './app.js';
+
     mountLayout('funcionarios');
-    let todasObras = [], todosFuncionarios = [];
-    async function carregar() {
-      todasObras = await getObras(); todosFuncionarios = await getTodosFuncionarios();
-      const filterSelect = document.getElementById('obraFilter'); filterSelect.innerHTML = '<option value="">Todas as obras</option>' + todasObras.map(o => '<option value="' + o.id + '">' + o.nome + '</option>').join('');
-      renderizarCards(todosFuncionarios); renderizarTabela(todosFuncionarios);
+
+    const tbody = document.getElementById('tbodyFuncionarios');
+    const modal = document.getElementById('modalFunc');
+    const form = document.getElementById('formFunc');
+    const funcModalTitle = document.getElementById('funcModalTitle');
+
+    let obras = [];
+    let funcionarios = [];
+    let filtrados = [];
+    let editandoId = null;
+
+    const esc = (v) => String(v ?? '').replace(/[&<>'"]/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;' }[c]));
+
+    function preencherSelectObras() {
+      const options = ['<option value="">Todas as obras</option>', ...obras.map((o) => `<option value="${o.id}">${esc(o.nome)}</option>`)].join('');
+      document.getElementById('obraFilter').innerHTML = options;
+      document.getElementById('obraId').innerHTML = obras.map((o) => `<option value="${o.id}">${esc(o.nome)}</option>`).join('');
     }
-    function renderizarCards(funcs) {
-      const tipos = { 'Total Geral': funcs.length, 'Efetivos': funcs.filter(f => f.tipoVinculo === 'Efetivo').length, 'PJ': funcs.filter(f => f.tipoVinculo === 'PJ').length, 'Operacional': funcs.filter(f => f.setor === 'Operacional').length, 'ADM': funcs.filter(f => f.setor === 'ADM').length, 'Mobilização': funcs.filter(f => f.tipoVinculo === 'Mobilização').length, 'Alteração de Função': funcs.filter(f => f.tipoVinculo === 'Alteração de Função').length, 'Terceiros': funcs.filter(f => f.tipoVinculo === 'Terceiros').length };
-      const panel = document.getElementById('statsPanel'); panel.innerHTML = '';
-      for (const [label, value] of Object.entries(tipos)) { const card = document.createElement('div'); card.className = 'stat-card'; card.innerHTML = '<div class="label">' + label + '</div><div class="value">' + value + '</div>'; panel.appendChild(card); }
+
+    function preencherSelectCargos() {
+      const cargos = [...new Set(funcionarios.map((f) => (f.cargo || '').trim()).filter(Boolean))].sort();
+      document.getElementById('cargoFilter').innerHTML = '<option value="">Todos os cargos</option>' + cargos.map((c) => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
     }
-    function renderizarTabela(funcs) {
-      const tbody = document.getElementById('tbodyFuncionarios');
-      tbody.innerHTML = funcs.map(f => { const obraNome = todasObras.find(o => o.id === f.obraId)?.nome || 'N/A'; return '<tr><td class="cell-strong">' + (f.re || '-') + '</td><td class="cell-strong">' + (f.nome || '') + '</td><td class="cell-muted">' + (f.cargo || '') + '</td><td class="cell-muted">' + obraNome + '</td><td class="cell-muted">' + (f.tipoVinculo || '-') + '</td><td class="cell-muted">' + (f.dataAdmissao ? new Date(f.dataAdmissao).toLocaleDateString() : '-') + '</td><td class="cell-muted"><span class="badge ' + (f.situacao === 'Ativo' ? 'on' : '') + '">' + (f.situacao || 'Ativo') + '</span></td><td class="cell-muted"><button class="btn btn-sm btn-warning" onclick="editarFunc(\'' + f.id + '\')">Editar</button> <button class="btn btn-sm btn-danger" onclick="excluirFunc(\'' + f.id + '\')">Excluir</button></td></tr>'; }).join('');
-      if (funcs.length === 0) tbody.innerHTML = '<tr><td colspan="8" style="text-align:center">Nenhum funcionário</td></tr>';
+
+    function aplicarFiltros() {
+      const termo = document.getElementById('searchInput').value.trim().toLowerCase();
+      const obraId = document.getElementById('obraFilter').value;
+      const cargo = document.getElementById('cargoFilter').value;
+
+      filtrados = funcionarios.filter((f) => {
+        const matchBusca = !termo || (f.nome || '').toLowerCase().includes(termo) || (f.cargo || '').toLowerCase().includes(termo);
+        const matchObra = !obraId || f.obraId === obraId;
+        const matchCargo = !cargo || f.cargo === cargo;
+        return matchBusca && matchObra && matchCargo;
+      });
+
+      renderTabela();
     }
-    document.getElementById('searchInput').addEventListener('input', (e) => { const termo = e.target.value.toLowerCase(); const filtrados = todosFuncionarios.filter(f => (f.nome && f.nome.toLowerCase().includes(termo)) || (f.cargo && f.cargo.toLowerCase().includes(termo))); renderizarTabela(filtrados); renderizarCards(filtrados); });
-    document.getElementById('obraFilter').addEventListener('change', (e) => { const obraId = e.target.value; const filtrados = obraId ? todosFuncionarios.filter(f => f.obraId === obraId) : todosFuncionarios; renderizarTabela(filtrados); renderizarCards(filtrados); });
-    window.excluirFunc = async (id) => { if (confirm('Excluir?')) { await deleteFuncionario(id); await carregar(); } };
-    window.editarFunc = (id) => alert('Edição em breve');
-    document.getElementById('importarBtn').onclick = () => alert('Importação será implementada');
-    document.getElementById('exportarBtn').onclick = () => alert('Exportação será implementada');
-    document.getElementById('apagarTodosBtn').onclick = () => { if (confirm('Excluir TODOS?')) alert('Função será implementada'); };
-    const modal = document.getElementById('modalFunc'); window.fecharModalFunc = () => modal.style.display = 'none';
-    document.getElementById('novoFuncBtn').onclick = async () => { const selectObra = document.getElementById('obraId'); selectObra.innerHTML = todasObras.map(o => '<option value="' + o.id + '">' + o.nome + '</option>').join(''); modal.style.display = 'flex'; };
-    document.getElementById('formFunc').addEventListener('submit', async (e) => { e.preventDefault(); const func = { re: document.getElementById('re').value, nome: document.getElementById('nome').value, cargo: document.getElementById('cargo').value, setor: document.getElementById('setor').value, obraId: document.getElementById('obraId').value, tipoVinculo: document.getElementById('tipoVinculo').value, dataAdmissao: document.getElementById('dataAdmissao').value, situacao: document.getElementById('situacao').value, ativo: true }; await addFuncionario(func); modal.style.display = 'none'; document.getElementById('formFunc').reset(); await carregar(); });
-    await carregar();
+
+    function renderTabela() {
+      tbody.innerHTML = filtrados.map((f) => {
+        const obraNome = obras.find((o) => o.id === f.obraId)?.nome || '-';
+        return `<tr>
+          <td>${esc(f.re || '-')}</td>
+          <td class="cell-strong">${esc(f.nome)}</td>
+          <td>${esc(f.cargo)}</td>
+          <td>${esc(obraNome)}</td>
+          <td>${esc(f.tipoVinculo || '-')}</td>
+          <td><span class="badge ${(f.situacao || 'Ativo') === 'Ativo' ? 'on' : ''}">${esc(f.situacao || 'Ativo')}</span></td>
+          <td>
+            <button class="btn btn-sm btn-warning" data-edit="${f.id}">Editar</button>
+            <button class="btn btn-sm btn-danger" data-del="${f.id}">Excluir</button>
+          </td>
+        </tr>`;
+      }).join('');
+
+      if (!filtrados.length) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center">Nenhum funcionário encontrado.</td></tr>';
+      }
+    }
+
+    function abrirModal(func = null) {
+      editandoId = func?.id || null;
+      funcModalTitle.textContent = func ? 'Editar Funcionário' : 'Novo Funcionário';
+      document.getElementById('re').value = func?.re || '';
+      document.getElementById('nome').value = func?.nome || '';
+      document.getElementById('cargo').value = func?.cargo || '';
+      document.getElementById('obraId').value = func?.obraId || obras[0]?.id || '';
+      document.getElementById('tipoVinculo').value = func?.tipoVinculo || 'Efetivo';
+      document.getElementById('situacao').value = func?.situacao || 'Ativo';
+      modal.style.display = 'flex';
+    }
+
+    function fecharModal() {
+      modal.style.display = 'none';
+      form.reset();
+      editandoId = null;
+    }
+
+    document.getElementById('novoFuncBtn').addEventListener('click', () => abrirModal());
+    document.getElementById('cancelarFuncBtn').addEventListener('click', fecharModal);
+
+    document.getElementById('searchInput').addEventListener('input', aplicarFiltros);
+    document.getElementById('obraFilter').addEventListener('change', aplicarFiltros);
+    document.getElementById('cargoFilter').addEventListener('change', aplicarFiltros);
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const payload = {
+        re: document.getElementById('re').value.trim(),
+        nome: document.getElementById('nome').value.trim(),
+        cargo: document.getElementById('cargo').value.trim(),
+        obraId: document.getElementById('obraId').value,
+        tipoVinculo: document.getElementById('tipoVinculo').value,
+        situacao: document.getElementById('situacao').value,
+        ativo: true
+      };
+
+      if (editandoId) await updateFuncionario(editandoId, payload);
+      else await addFuncionario(payload);
+
+      fecharModal();
+    });
+
+    tbody.addEventListener('click', async (event) => {
+      const idEdit = event.target.getAttribute('data-edit');
+      if (idEdit) {
+        abrirModal(funcionarios.find((f) => f.id === idEdit));
+        return;
+      }
+
+      const idDel = event.target.getAttribute('data-del');
+      if (idDel && confirm('Excluir este funcionário?')) {
+        await deleteFuncionario(idDel);
+      }
+    });
+
+    document.getElementById('exportarCsvBtn').addEventListener('click', () => {
+      exportarCSV('funcionarios.csv', ['re', 'nome', 'cargo', 'obra', 'tipoVinculo', 'situacao'], filtrados.map((f) => ({
+        re: f.re || '',
+        nome: f.nome || '',
+        cargo: f.cargo || '',
+        obra: obras.find((o) => o.id === f.obraId)?.nome || '',
+        tipoVinculo: f.tipoVinculo || '',
+        situacao: f.situacao || ''
+      })));
+    });
+
+    subscribeObras((data) => {
+      obras = data;
+      preencherSelectObras();
+      aplicarFiltros();
+    });
+
+    subscribeFuncionarios(null, (data) => {
+      funcionarios = data;
+      preencherSelectCargos();
+      aplicarFiltros();
+    });
   </script>
 </body>
 </html>

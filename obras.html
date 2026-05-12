@@ -1,7 +1,8 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Obras · Bucagrans</title>
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -10,23 +11,117 @@
     <div id="sidebar-slot"></div>
     <main>
       <div class="page-header"><h1>Obras</h1><button class="btn" id="novaObraBtn">+ Nova Obra</button></div>
-      <div class="table-wrap"><table style="width:100%"><thead><tr><th>Nome</th><th>Localização</th><th>Funcionários</th><th>Ações</th></tr></thead><tbody id="tbodyObras"></tbody></table></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Nome</th><th>Localização</th><th>Funcionários</th><th>Ações</th></tr></thead>
+          <tbody id="tbodyObras"></tbody>
+        </table>
+      </div>
     </main>
   </div>
-  <div id="modalObra" class="modal"><div class="modal-content"><span class="close" onclick="fecharModal()">&times;</span><h3>Nova Obra</h3><input type="text" id="nomeObra" class="input" placeholder="Nome" style="text-transform:uppercase"><input type="text" id="localizacaoObra" class="input" placeholder="Localização" style="text-transform:uppercase"><button class="btn" id="salvarObraBtn">Salvar</button></div></div>
+
+  <div id="modalObra" class="modal">
+    <div class="modal-content">
+      <h3 id="modalTitle">Nova Obra</h3>
+      <form id="formObra">
+        <div class="field"><label for="nomeObra">Nome</label><input id="nomeObra" class="input" required></div>
+        <div class="field"><label for="localizacaoObra">Localização</label><input id="localizacaoObra" class="input" required></div>
+        <div class="dialog-foot">
+          <button type="button" class="btn btn-outline" id="cancelarObraBtn">Cancelar</button>
+          <button type="submit" class="btn">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script type="module">
-    import { mountLayout, carregarObras, adicionarObra } from './app.js';
+    import { mountLayout, subscribeObras, subscribeFuncionarios, addObra, updateObra, deleteObra } from './app.js';
+
     mountLayout('obras');
-    await carregarObras();
+
+    const tbody = document.getElementById('tbodyObras');
     const modal = document.getElementById('modalObra');
-    document.getElementById('novaObraBtn').onclick = () => modal.style.display = 'flex';
-    window.fecharModal = () => modal.style.display = 'none';
-    document.getElementById('salvarObraBtn').onclick = async () => {
-      const nome = document.getElementById('nomeObra').value;
-      const localizacao = document.getElementById('localizacaoObra').value;
-      if (nome && localizacao) { await adicionarObra(nome, localizacao); modal.style.display = 'none'; document.getElementById('nomeObra').value = ''; document.getElementById('localizacaoObra').value = ''; }
-      else alert('Preencha todos os campos');
-    };
+    const form = document.getElementById('formObra');
+    const title = document.getElementById('modalTitle');
+    let obras = [];
+    let funcionarios = [];
+    let editandoId = null;
+
+    const esc = (v) => String(v ?? '').replace(/[&<>'"]/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;' }[c]));
+
+    function abrirModal(obra = null) {
+      editandoId = obra?.id || null;
+      title.textContent = obra ? 'Editar Obra' : 'Nova Obra';
+      document.getElementById('nomeObra').value = obra?.nome || '';
+      document.getElementById('localizacaoObra').value = obra?.localizacao || '';
+      modal.style.display = 'flex';
+    }
+
+    function fecharModal() {
+      modal.style.display = 'none';
+      form.reset();
+      editandoId = null;
+    }
+
+    function render() {
+      tbody.innerHTML = obras.map((obra) => {
+        const totalFunc = funcionarios.filter((f) => f.obraId === obra.id).length;
+        return `<tr>
+          <td class="cell-strong">${esc(obra.nome)}</td>
+          <td class="cell-muted">${esc(obra.localizacao)}</td>
+          <td>${totalFunc}</td>
+          <td>
+            <button class="btn btn-sm btn-warning" data-edit="${obra.id}">Editar</button>
+            <button class="btn btn-sm btn-danger" data-del="${obra.id}">Excluir</button>
+          </td>
+        </tr>`;
+      }).join('');
+
+      if (!obras.length) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center">Nenhuma obra cadastrada.</td></tr>';
+      }
+    }
+
+    document.getElementById('novaObraBtn').addEventListener('click', () => abrirModal());
+    document.getElementById('cancelarObraBtn').addEventListener('click', fecharModal);
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const payload = {
+        nome: document.getElementById('nomeObra').value.trim().toUpperCase(),
+        localizacao: document.getElementById('localizacaoObra').value.trim().toUpperCase(),
+        ativo: true
+      };
+
+      if (editandoId) await updateObra(editandoId, payload);
+      else await addObra(payload);
+
+      fecharModal();
+    });
+
+    tbody.addEventListener('click', async (event) => {
+      const idEdit = event.target.getAttribute('data-edit');
+      if (idEdit) {
+        const obra = obras.find((o) => o.id === idEdit);
+        abrirModal(obra);
+        return;
+      }
+
+      const idDel = event.target.getAttribute('data-del');
+      if (idDel && confirm('Excluir esta obra?')) {
+        await deleteObra(idDel);
+      }
+    });
+
+    subscribeObras((data) => {
+      obras = data;
+      render();
+    });
+
+    subscribeFuncionarios(null, (data) => {
+      funcionarios = data;
+      render();
+    });
   </script>
 </body>
 </html>

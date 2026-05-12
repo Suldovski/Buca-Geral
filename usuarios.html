@@ -1,7 +1,8 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Usuários · Bucagrans</title>
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -9,23 +10,142 @@
   <div class="app">
     <div id="sidebar-slot"></div>
     <main>
-      <div class="page-header"><h1>Usuários</h1><button class="btn" id="novoUsuarioBtn">+ Novo Usuário</button></div>
-      <div class="table-wrap"><table style="width:100%"><thead><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Ações</th></tr></thead><tbody id="tbodyUsuarios"></tbody></td></div>
+      <div class="page-header"><h1>Usuários do sistema</h1><button class="btn" id="novoUsuarioBtn">+ Novo Usuário</button></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Obra</th><th>Ações</th></tr></thead>
+          <tbody id="tbodyUsuarios"></tbody>
+        </table>
+      </div>
     </main>
   </div>
+
+  <div id="modalUsuario" class="modal">
+    <div class="modal-content">
+      <h3 id="usuarioModalTitle">Novo Usuário</h3>
+      <form id="formUsuario" class="form-grid">
+        <div class="field"><label for="usuarioNome">Nome</label><input id="usuarioNome" class="input" required></div>
+        <div class="field"><label for="usuarioEmail">E-mail</label><input id="usuarioEmail" class="input" type="email" required></div>
+        <div class="field"><label for="usuarioPerfil">Perfil</label><select id="usuarioPerfil" class="select"><option>RH Matriz</option><option>Obra</option></select></div>
+        <div class="field"><label for="usuarioObraId">Obra</label><select id="usuarioObraId" class="select"><option value="">Sem vínculo</option></select></div>
+        <div class="field" id="senhaField"><label for="usuarioSenha">Senha inicial</label><input id="usuarioSenha" class="input" type="password"></div>
+        <div class="dialog-foot">
+          <button type="button" class="btn btn-outline" id="cancelarUsuarioBtn">Cancelar</button>
+          <button type="submit" class="btn">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script type="module">
-    import { mountLayout, getUsuarios, addUsuario } from './app.js';
+    import { mountLayout, subscribeUsuarios, subscribeObras, addUsuario, updateUsuario, deleteUsuario } from './app.js';
+
     mountLayout('usuarios');
-    async function carregar() {
-      const usuarios = await getUsuarios();
-      const tbody = document.getElementById('tbodyUsuarios');
-      tbody.innerHTML = usuarios.map(u => '<tr><td>' + (u.nome || '') + '</td><td>' + (u.email || '') + '</td><td>' + (u.perfil || 'Operador') + '</td><td><button class="btn btn-sm btn-warning">Editar</button><button class="btn btn-sm btn-danger">Excluir</button></td></tr>').join('');
+
+    const tbody = document.getElementById('tbodyUsuarios');
+    const modal = document.getElementById('modalUsuario');
+    const form = document.getElementById('formUsuario');
+    const senhaField = document.getElementById('senhaField');
+    const title = document.getElementById('usuarioModalTitle');
+
+    let usuarios = [];
+    let obras = [];
+    let editandoId = null;
+
+    const esc = (v) => String(v ?? '').replace(/[&<>'"]/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;' }[c]));
+
+    function preencherObrasSelect() {
+      const html = '<option value="">Sem vínculo</option>' + obras.map((o) => `<option value="${o.id}">${esc(o.nome)}</option>`).join('');
+      document.getElementById('usuarioObraId').innerHTML = html;
     }
-    document.getElementById('novoUsuarioBtn').onclick = async () => {
-      const nome = prompt('Nome:'); const email = prompt('Email:'); const senha = prompt('Senha:'); const perfil = confirm('RH Matriz?') ? 'RH Matriz' : 'Obra';
-      if (nome && email && senha) { await addUsuario({ nome, email, senha, perfil }); await carregar(); }
-    };
-    await carregar();
+
+    function render() {
+      tbody.innerHTML = usuarios.map((u) => {
+        const obraNome = obras.find((o) => o.id === u.obraId)?.nome || '-';
+        return `<tr>
+          <td>${esc(u.nome)}</td>
+          <td>${esc(u.email)}</td>
+          <td>${esc(u.perfil || '-')}</td>
+          <td>${esc(obraNome)}</td>
+          <td>
+            <button class="btn btn-sm btn-warning" data-edit="${u.id}">Editar</button>
+            <button class="btn btn-sm btn-danger" data-del="${u.id}">Excluir</button>
+          </td>
+        </tr>`;
+      }).join('');
+
+      if (!usuarios.length) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center">Nenhum usuário cadastrado.</td></tr>';
+      }
+    }
+
+    function abrirModal(usuario = null) {
+      editandoId = usuario?.id || null;
+      title.textContent = usuario ? 'Editar Usuário' : 'Novo Usuário';
+      senhaField.style.display = usuario ? 'none' : 'block';
+      document.getElementById('usuarioNome').value = usuario?.nome || '';
+      document.getElementById('usuarioEmail').value = usuario?.email || '';
+      document.getElementById('usuarioEmail').disabled = !!usuario;
+      document.getElementById('usuarioPerfil').value = usuario?.perfil || 'Obra';
+      document.getElementById('usuarioObraId').value = usuario?.obraId || '';
+      document.getElementById('usuarioSenha').value = '';
+      modal.style.display = 'flex';
+    }
+
+    function fecharModal() {
+      modal.style.display = 'none';
+      form.reset();
+      editandoId = null;
+      document.getElementById('usuarioEmail').disabled = false;
+    }
+
+    document.getElementById('novoUsuarioBtn').addEventListener('click', () => abrirModal());
+    document.getElementById('cancelarUsuarioBtn').addEventListener('click', fecharModal);
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const nome = document.getElementById('usuarioNome').value.trim();
+      const email = document.getElementById('usuarioEmail').value.trim();
+      const perfil = document.getElementById('usuarioPerfil').value;
+      const obraId = document.getElementById('usuarioObraId').value || null;
+
+      if (editandoId) {
+        await updateUsuario(editandoId, { nome, perfil, obraId });
+      } else {
+        const senha = document.getElementById('usuarioSenha').value;
+        if (!senha) {
+          alert('Informe a senha inicial.');
+          return;
+        }
+        await addUsuario({ nome, email, perfil, obraId, senha });
+      }
+
+      fecharModal();
+    });
+
+    tbody.addEventListener('click', async (event) => {
+      const idEdit = event.target.getAttribute('data-edit');
+      if (idEdit) {
+        abrirModal(usuarios.find((u) => u.id === idEdit));
+        return;
+      }
+
+      const idDel = event.target.getAttribute('data-del');
+      if (idDel && confirm('Excluir este usuário do sistema?')) {
+        await deleteUsuario(idDel);
+      }
+    });
+
+    subscribeObras((data) => {
+      obras = data;
+      preencherObrasSelect();
+      render();
+    });
+
+    subscribeUsuarios((data) => {
+      usuarios = data;
+      render();
+    });
   </script>
 </body>
 </html>
