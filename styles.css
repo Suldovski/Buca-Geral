@@ -52,6 +52,15 @@ th { background: #f8fafc; color: #64748b; font-size: 14px; }
 tr:last-child td { border-bottom: none; }
 .cell-strong { font-weight: 600; }
 .cell-muted { color: #64748b; }
+.table-fit { table-layout: fixed; }
+.table-fit th,
+.table-fit td {
+  padding: 10px 8px;
+  font-size: clamp(11px, 0.82vw, 14px);
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.table-fit .action-group { flex-wrap: wrap; }
 
 .filters-bar { display: flex; gap: 10px; margin-bottom: 16px; align-items: center; flex-wrap: wrap; }
 .filters-grid > * { flex: 1; min-width: 180px; }

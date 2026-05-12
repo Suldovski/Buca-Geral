@@ -38,7 +38,7 @@
   </div>
 
   <script type="module">
-    import { mountLayout, subscribeUsuarios, subscribeObras, addUsuario, updateUsuario, deleteUsuario, escapeHtml, getUsuarioLogado, isRhMatriz } from './app.js';
+    import { mountLayout, subscribeUsuarios, subscribeObras, addUsuario, updateUsuario, deleteUsuario, escapeHtml, getUsuarioLogado } from './app.js';
 
     mountLayout('usuarios');
 
@@ -52,11 +52,6 @@
     let obras = [];
     let editandoId = null;
     const usuarioLogado = getUsuarioLogado();
-
-    if (!isRhMatriz(usuarioLogado)) {
-      alert('Somente RH Matriz pode gerenciar usuários.');
-      window.location.href = 'inicio.html';
-    }
 
     function preencherObrasSelect() {
       const html = '<option value="">Sem vínculo</option>' + obras.map((o) => `<option value="${o.id}">${escapeHtml(o.nome)}</option>`).join('');
