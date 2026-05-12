@@ -33,7 +33,12 @@ export const db = getFirestore(app);
 export const auth = getAuth(app);
 
 function getSecondaryAuth() {
+  /**
+   * Cria/reutiliza uma instância secundária do Auth para cadastrar usuários
+   * sem trocar a sessão do usuário atualmente logado no sistema.
+   */
   const secondaryName = "buca-geral-secondary-auth";
+  // Reutiliza a app secundária para evitar erro de inicialização duplicada.
   const secondaryApp = getApps().find((a) => a.name === secondaryName)
     ?? initializeApp(firebaseConfig, secondaryName);
   return getAuth(secondaryApp);
@@ -55,6 +60,7 @@ export function onAuth(callback) {
 export async function criarUsuarioAuth(email, password) {
   const secondaryAuth = getSecondaryAuth();
   const cred = await createUserWithEmailAndPassword(secondaryAuth, email, password);
+  // Encerra somente a sessão da instância secundária; a sessão principal permanece logada.
   await signOut(secondaryAuth);
   return cred.user;
 }

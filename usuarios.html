@@ -38,7 +38,7 @@
   </div>
 
   <script type="module">
-    import { mountLayout, subscribeUsuarios, subscribeObras, addUsuario, updateUsuario, deleteUsuario } from './app.js';
+    import { mountLayout, subscribeUsuarios, subscribeObras, addUsuario, updateUsuario, deleteUsuario, escapeHtml } from './app.js';
 
     mountLayout('usuarios');
 
@@ -52,10 +52,8 @@
     let obras = [];
     let editandoId = null;
 
-    const esc = (v) => String(v ?? '').replace(/[&<>'"]/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;' }[c]));
-
     function preencherObrasSelect() {
-      const html = '<option value="">Sem vínculo</option>' + obras.map((o) => `<option value="${o.id}">${esc(o.nome)}</option>`).join('');
+      const html = '<option value="">Sem vínculo</option>' + obras.map((o) => `<option value="${o.id}">${escapeHtml(o.nome)}</option>`).join('');
       document.getElementById('usuarioObraId').innerHTML = html;
     }
 
@@ -63,10 +61,10 @@
       tbody.innerHTML = usuarios.map((u) => {
         const obraNome = obras.find((o) => o.id === u.obraId)?.nome || '-';
         return `<tr>
-          <td>${esc(u.nome)}</td>
-          <td>${esc(u.email)}</td>
-          <td>${esc(u.perfil || '-')}</td>
-          <td>${esc(obraNome)}</td>
+          <td>${escapeHtml(u.nome)}</td>
+          <td>${escapeHtml(u.email)}</td>
+          <td>${escapeHtml(u.perfil || '-')}</td>
+          <td>${escapeHtml(obraNome)}</td>
           <td>
             <button class="btn btn-sm btn-warning" data-edit="${u.id}">Editar</button>
             <button class="btn btn-sm btn-danger" data-del="${u.id}">Excluir</button>

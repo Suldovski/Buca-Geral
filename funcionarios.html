@@ -47,7 +47,7 @@
   </div>
 
   <script type="module">
-    import { mountLayout, subscribeObras, subscribeFuncionarios, addFuncionario, updateFuncionario, deleteFuncionario, exportarCSV } from './app.js';
+    import { mountLayout, subscribeObras, subscribeFuncionarios, addFuncionario, updateFuncionario, deleteFuncionario, exportarCSV, escapeHtml } from './app.js';
 
     mountLayout('funcionarios');
 
@@ -61,17 +61,15 @@
     let filtrados = [];
     let editandoId = null;
 
-    const esc = (v) => String(v ?? '').replace(/[&<>'"]/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;' }[c]));
-
     function preencherSelectObras() {
-      const options = ['<option value="">Todas as obras</option>', ...obras.map((o) => `<option value="${o.id}">${esc(o.nome)}</option>`)].join('');
+      const options = ['<option value="">Todas as obras</option>', ...obras.map((o) => `<option value="${o.id}">${escapeHtml(o.nome)}</option>`)].join('');
       document.getElementById('obraFilter').innerHTML = options;
-      document.getElementById('obraId').innerHTML = obras.map((o) => `<option value="${o.id}">${esc(o.nome)}</option>`).join('');
+      document.getElementById('obraId').innerHTML = obras.map((o) => `<option value="${o.id}">${escapeHtml(o.nome)}</option>`).join('');
     }
 
     function preencherSelectCargos() {
       const cargos = [...new Set(funcionarios.map((f) => (f.cargo || '').trim()).filter(Boolean))].sort();
-      document.getElementById('cargoFilter').innerHTML = '<option value="">Todos os cargos</option>' + cargos.map((c) => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+      document.getElementById('cargoFilter').innerHTML = '<option value="">Todos os cargos</option>' + cargos.map((c) => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
     }
 
     function aplicarFiltros() {
@@ -93,12 +91,12 @@
       tbody.innerHTML = filtrados.map((f) => {
         const obraNome = obras.find((o) => o.id === f.obraId)?.nome || '-';
         return `<tr>
-          <td>${esc(f.re || '-')}</td>
-          <td class="cell-strong">${esc(f.nome)}</td>
-          <td>${esc(f.cargo)}</td>
-          <td>${esc(obraNome)}</td>
-          <td>${esc(f.tipoVinculo || '-')}</td>
-          <td><span class="badge ${(f.situacao || 'Ativo') === 'Ativo' ? 'on' : ''}">${esc(f.situacao || 'Ativo')}</span></td>
+          <td>${escapeHtml(f.re || '-')}</td>
+          <td class="cell-strong">${escapeHtml(f.nome)}</td>
+          <td>${escapeHtml(f.cargo)}</td>
+          <td>${escapeHtml(obraNome)}</td>
+          <td>${escapeHtml(f.tipoVinculo || '-')}</td>
+          <td><span class="badge ${(f.situacao || 'Ativo') === 'Ativo' ? 'on' : ''}">${escapeHtml(f.situacao || 'Ativo')}</span></td>
           <td>
             <button class="btn btn-sm btn-warning" data-edit="${f.id}">Editar</button>
             <button class="btn btn-sm btn-danger" data-del="${f.id}">Excluir</button>
@@ -112,6 +110,10 @@
     }
 
     function abrirModal(func = null) {
+      if (!obras.length) {
+        alert('Cadastre uma obra antes de cadastrar funcionários.');
+        return;
+      }
       editandoId = func?.id || null;
       funcModalTitle.textContent = func ? 'Editar Funcionário' : 'Novo Funcionário';
       document.getElementById('re').value = func?.re || '';
@@ -148,6 +150,11 @@
         ativo: true
       };
 
+      if (!payload.obraId) {
+        alert('Selecione uma obra válida.');
+        return;
+      }
+
       if (editandoId) await updateFuncionario(editandoId, payload);
       else await addFuncionario(payload);
 
@@ -168,11 +175,12 @@
     });
 
     document.getElementById('exportarCsvBtn').addEventListener('click', () => {
+      const obraMap = new Map(obras.map((obra) => [obra.id, obra.nome || '']));
       exportarCSV('funcionarios.csv', ['re', 'nome', 'cargo', 'obra', 'tipoVinculo', 'situacao'], filtrados.map((f) => ({
         re: f.re || '',
         nome: f.nome || '',
         cargo: f.cargo || '',
-        obra: obras.find((o) => o.id === f.obraId)?.nome || '',
+        obra: obraMap.get(f.obraId) || '',
         tipoVinculo: f.tipoVinculo || '',
         situacao: f.situacao || ''
       })));

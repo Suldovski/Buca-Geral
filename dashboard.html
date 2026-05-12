@@ -24,7 +24,7 @@
   </div>
 
   <script type="module">
-    import { mountLayout, observarEstatisticasDashboard } from './app.js';
+    import { mountLayout, observarEstatisticasDashboard, escapeHtml } from './app.js';
 
     mountLayout('dashboard');
     const lista = document.getElementById('lista-cargos');
@@ -34,9 +34,9 @@
       document.getElementById('stat-func').textContent = stats.totalFuncionarios;
       document.getElementById('stat-ativos').textContent = stats.totalAtivos;
 
-      const entries = Object.entries(stats.porCargo).sort((a, b) => b[1] - a[1]);
+      const entries = Object.entries(stats.porCargo).sort(([, totalA], [, totalB]) => totalB - totalA);
       lista.innerHTML = entries.length
-        ? entries.map(([cargo, total]) => `<div class="list-row"><span>${cargo}</span><strong>${total}</strong></div>`).join('')
+        ? entries.map(([cargo, total]) => `<div class="list-row"><span>${escapeHtml(cargo)}</span><strong>${total}</strong></div>`).join('')
         : '<p class="cell-muted">Sem dados.</p>';
     });
   </script>

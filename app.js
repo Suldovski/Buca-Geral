@@ -166,11 +166,22 @@ export {
   deleteUsuario
 };
 
+export function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>'"`]/g, (char) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    "'": "&#39;",
+    "\"": "&quot;",
+    "`": "&#96;"
+  }[char]));
+}
+
 export function exportarCSV(nomeArquivo, colunas, linhas) {
-  const header = `${colunas.join(",")}\n`;
+  const header = `${colunas.map((coluna) => `"${String(coluna).replace(/"/g, '""')}"`).join(",")}\n`;
   const body = linhas.map((linha) => colunas.map((coluna) => {
     const valor = linha[coluna] ?? "";
-    const texto = String(valor).replaceAll('"', '""');
+    const texto = String(valor).replace(/"/g, '""');
     return `"${texto}"`;
   }).join(",")).join("\n");
 

@@ -35,7 +35,7 @@
   </div>
 
   <script type="module">
-    import { mountLayout, subscribeObras, subscribeFuncionarios, addObra, updateObra, deleteObra } from './app.js';
+    import { mountLayout, subscribeObras, subscribeFuncionarios, addObra, updateObra, deleteObra, escapeHtml } from './app.js';
 
     mountLayout('obras');
 
@@ -46,8 +46,6 @@
     let obras = [];
     let funcionarios = [];
     let editandoId = null;
-
-    const esc = (v) => String(v ?? '').replace(/[&<>'"]/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;' }[c]));
 
     function abrirModal(obra = null) {
       editandoId = obra?.id || null;
@@ -67,8 +65,8 @@
       tbody.innerHTML = obras.map((obra) => {
         const totalFunc = funcionarios.filter((f) => f.obraId === obra.id).length;
         return `<tr>
-          <td class="cell-strong">${esc(obra.nome)}</td>
-          <td class="cell-muted">${esc(obra.localizacao)}</td>
+          <td class="cell-strong">${escapeHtml(obra.nome)}</td>
+          <td class="cell-muted">${escapeHtml(obra.localizacao)}</td>
           <td>${totalFunc}</td>
           <td>
             <button class="btn btn-sm btn-warning" data-edit="${obra.id}">Editar</button>
