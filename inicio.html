@@ -4,7 +4,81 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Início · Bucagrans</title>
-  <script>window.location.replace('dashboard.html');</script>
+  <link rel="stylesheet" href="styles.css">
 </head>
-<body></body>
+<body>
+  <div class="app">
+    <div id="sidebar-slot"></div>
+    <main>
+      <div class="page-header"><h1>Início</h1></div>
+
+      <div class="grid cards-2">
+        <div class="card stat"><div><div class="label">Obras</div><div class="value" id="stat-obras">0</div></div></div>
+        <div class="card stat"><div><div class="label">Funcionários</div><div class="value" id="stat-func">0</div></div></div>
+      </div>
+
+      <div class="grid grid-2" style="margin-top:20px;">
+        <div class="card">
+          <h3>Admissões por mês (12 meses)</h3>
+          <div class="bars" id="admissoesChart"></div>
+        </div>
+        <div class="card">
+          <h3>Top 5 cargos</h3>
+          <div id="rankingCargos" class="list-stack"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script type="module">
+    import {
+      mountLayout,
+      subscribeObras,
+      subscribeFuncionarios,
+      normalizarFuncionario,
+      calcularRanking,
+      calcularAdmissoes12Meses,
+      escapeHtml
+    } from './app.js';
+
+    mountLayout('inicio');
+
+    const statObras = document.getElementById('stat-obras');
+    const statFunc = document.getElementById('stat-func');
+    const chart = document.getElementById('admissoesChart');
+    const ranking = document.getElementById('rankingCargos');
+
+    let obras = [];
+    let funcionarios = [];
+
+    function render() {
+      statObras.textContent = obras.length;
+      statFunc.textContent = funcionarios.length;
+
+      const serie = calcularAdmissoes12Meses(funcionarios);
+      const max = Math.max(1, ...serie.map((m) => m.total));
+      chart.innerHTML = serie.map((m) => `
+        <div class="col">
+          <div class="bar" style="height:${Math.max(4, (m.total / max) * 140)}px"></div>
+          <div class="lbl">${m.label}</div>
+        </div>
+      `).join('');
+
+      const top = calcularRanking(funcionarios, 'funcao', 5);
+      ranking.innerHTML = top.length
+        ? top.map(([cargo, total]) => `<div class="list-row"><span>${escapeHtml(cargo)}</span><strong>${total}</strong></div>`).join('')
+        : '<p class="cell-muted">Sem dados.</p>';
+    }
+
+    subscribeObras((data) => {
+      obras = data;
+      render();
+    });
+
+    subscribeFuncionarios(null, (data) => {
+      funcionarios = data.map(normalizarFuncionario);
+      render();
+    });
+  </script>
+</body>
 </html>

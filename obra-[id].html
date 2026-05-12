@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Funcionários · Bucagrans</title>
+  <title>Obra · Bucagrans</title>
   <link rel="stylesheet" href="styles.css">
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -11,13 +11,13 @@
   <div class="app">
     <div id="sidebar-slot"></div>
     <main>
-      <div class="page-header"><h1>Funcionários</h1><button class="btn" id="novoFuncBtn">+ Novo Funcionário</button></div>
+      <a href="obras.html" class="back-link">← Voltar para Obras</a>
+      <div class="page-header"><h1 id="obraTitulo">Obra</h1><button class="btn" id="novoFuncBtn">+ Novo Funcionário</button></div>
 
       <div class="stats-panel" id="cardsPanel"></div>
 
       <div class="filters-bar filters-grid">
         <input id="searchInput" class="input" placeholder="Buscar por nome, função ou RE">
-        <select id="obraFilter" class="select"><option value="">Todas as obras</option></select>
         <button class="btn btn-outline" id="importarBtn">Importar Planilha</button>
         <button class="btn btn-outline" id="exportarCsvBtn">Exportar CSV</button>
       </div>
@@ -25,8 +25,8 @@
       <input id="importFile" type="file" accept=".csv,.xlsx,.xls" hidden>
 
       <div class="table-wrap">
-        <table style="min-width:1600px;">
-          <thead><tr><th>RE</th><th>Nome</th><th>Função</th><th>Setor</th><th>Tipo Vínculo</th><th>Admissão</th><th>Nascimento</th><th>CBO</th><th>Exp.30</th><th>Exp.60</th><th>Venc. ASO</th><th>Salário/Hora</th><th>Salário/Mês</th><th>Obra</th><th>Ações</th></tr></thead>
+        <table style="min-width:1500px;">
+          <thead><tr><th>RE</th><th>Nome</th><th>Função</th><th>Setor</th><th>Tipo Vínculo</th><th>Admissão</th><th>Nascimento</th><th>CBO</th><th>Exp.30</th><th>Exp.60</th><th>Venc. ASO</th><th>Salário/Hora</th><th>Salário/Mês</th><th>Ações</th></tr></thead>
           <tbody id="tbodyFuncionarios"></tbody>
         </table>
       </div>
@@ -47,7 +47,6 @@
         <div class="field"><label for="funcao">Função</label><input id="funcao" class="input" required></div>
         <div class="field"><label for="setor">Setor</label><select id="setor" class="select"><option>Operacional</option><option>ADM</option></select></div>
         <div class="field"><label for="tipoVinculo">Tipo vínculo</label><select id="tipoVinculo" class="select"><option>Efetivo</option><option>PJ</option><option>Terceiros</option><option>Mobilização</option><option>Alteração de Função</option></select></div>
-        <div class="field"><label for="obraId">Obra</label><select id="obraId" class="select" required></select></div>
         <div class="field"><label for="dataAdmissao">Data Admissão</label><input id="dataAdmissao" type="date" class="input"></div>
         <div class="field"><label for="nascimento">Data Nascimento</label><input id="nascimento" type="date" class="input"></div>
         <div class="field"><label for="cbo">CBO</label><input id="cbo" class="input"></div>
@@ -70,7 +69,7 @@
       <p id="importResumo" class="cell-muted" style="margin:8px 0 14px;"></p>
       <div class="table-wrap" style="max-height:320px;">
         <table>
-          <thead><tr><th>RE</th><th>Nome</th><th>Função</th><th>Obra</th><th>Status</th></tr></thead>
+          <thead><tr><th>RE</th><th>Nome</th><th>Função</th><th>Status</th></tr></thead>
           <tbody id="importPreviewBody"></tbody>
         </table>
       </div>
@@ -100,7 +99,9 @@
       calcularRanking
     } from './app.js';
 
-    mountLayout('funcionarios');
+    mountLayout('obras');
+
+    const obraId = new URLSearchParams(window.location.search).get('id');
 
     const CARD_DEFS = [
       { key: 'total', label: 'Total Geral', fn: () => true },
@@ -118,7 +119,7 @@
     const modal = document.getElementById('modalFunc');
     const form = document.getElementById('formFunc');
 
-    let obras = [];
+    let obraAtual = null;
     let funcionarios = [];
     let filtrados = [];
     let editandoId = null;
@@ -132,11 +133,6 @@
       el.textContent = message;
       container.appendChild(el);
       setTimeout(() => el.remove(), 3200);
-    }
-
-    function preencherSelectObras() {
-      document.getElementById('obraFilter').innerHTML = '<option value="">Todas as obras</option>' + obras.map((o) => `<option value="${o.id}">${escapeHtml(o.nome)}</option>`).join('');
-      document.getElementById('obraId').innerHTML = obras.map((o) => `<option value="${o.id}">${escapeHtml(o.nome)}</option>`).join('');
     }
 
     function renderCards(base) {
@@ -158,53 +154,43 @@
 
     function aplicarFiltros() {
       const termo = document.getElementById('searchInput').value.trim().toLowerCase();
-      const obraId = document.getElementById('obraFilter').value;
       const card = CARD_DEFS.find((c) => c.key === filtroCard) || CARD_DEFS[0];
 
       filtrados = funcionarios.filter((f) => {
         const matchBusca = !termo || (f.nome || '').toLowerCase().includes(termo) || (f.funcao || '').toLowerCase().includes(termo) || (f.re || '').toLowerCase().includes(termo);
-        const matchObra = !obraId || f.obraId === obraId;
-        return matchBusca && matchObra && card.fn(f);
+        return matchBusca && card.fn(f);
       });
 
-      renderCards(funcionarios.filter((f) => !obraId || f.obraId === obraId));
+      renderCards(funcionarios);
       renderTabela();
       renderRankings(filtrados);
     }
 
     function renderTabela() {
-      tbody.innerHTML = filtrados.map((f) => {
-        const obraNome = obras.find((o) => o.id === f.obraId)?.nome || '-';
-        return `<tr>
-          <td>${escapeHtml(f.re || '-')}</td>
-          <td class="cell-strong">${escapeHtml(f.nome || '-')}</td>
-          <td>${escapeHtml(f.funcao || '-')}</td>
-          <td>${escapeHtml(f.setor || '-')}</td>
-          <td>${escapeHtml(f.tipoVinculo || '-')}</td>
-          <td>${formatarDataBR(f.dataAdmissao)}</td>
-          <td>${formatarDataBR(f.nascimento)}</td>
-          <td>${escapeHtml(f.cbo || '-')}</td>
-          <td>${formatarDataBR(f.exp30)}</td>
-          <td>${formatarDataBR(f.exp60)}</td>
-          <td>${formatarDataBR(f.asoVencimento)}</td>
-          <td>${formatarMoeda(f.salarioHora)}</td>
-          <td>${formatarMoeda(f.salarioMes)}</td>
-          <td>${escapeHtml(obraNome)}</td>
-          <td>
-            <button class="btn btn-sm btn-warning" data-edit="${f.id}">Editar</button>
-            <button class="btn btn-sm btn-danger" data-del="${f.id}">Excluir</button>
-          </td>
-        </tr>`;
-      }).join('');
+      tbody.innerHTML = filtrados.map((f) => `<tr>
+        <td>${escapeHtml(f.re || '-')}</td>
+        <td class="cell-strong">${escapeHtml(f.nome || '-')}</td>
+        <td>${escapeHtml(f.funcao || '-')}</td>
+        <td>${escapeHtml(f.setor || '-')}</td>
+        <td>${escapeHtml(f.tipoVinculo || '-')}</td>
+        <td>${formatarDataBR(f.dataAdmissao)}</td>
+        <td>${formatarDataBR(f.nascimento)}</td>
+        <td>${escapeHtml(f.cbo || '-')}</td>
+        <td>${formatarDataBR(f.exp30)}</td>
+        <td>${formatarDataBR(f.exp60)}</td>
+        <td>${formatarDataBR(f.asoVencimento)}</td>
+        <td>${formatarMoeda(f.salarioHora)}</td>
+        <td>${formatarMoeda(f.salarioMes)}</td>
+        <td>
+          <button class="btn btn-sm btn-warning" data-edit="${f.id}">Editar</button>
+          <button class="btn btn-sm btn-danger" data-del="${f.id}">Excluir</button>
+        </td>
+      </tr>`).join('');
 
-      if (!filtrados.length) tbody.innerHTML = '<tr><td colspan="15" style="text-align:center">Nenhum funcionário encontrado.</td></tr>';
+      if (!filtrados.length) tbody.innerHTML = '<tr><td colspan="14" style="text-align:center">Nenhum funcionário encontrado.</td></tr>';
     }
 
     function abrirModal(func = null) {
-      if (!obras.length) {
-        showToast('Cadastre uma obra antes de cadastrar funcionários.', 'error');
-        return;
-      }
       editandoId = func?.id || null;
       document.getElementById('funcModalTitle').textContent = func ? 'Editar Funcionário' : 'Novo Funcionário';
       document.getElementById('re').value = func?.re || '';
@@ -212,7 +198,6 @@
       document.getElementById('funcao').value = func?.funcao || '';
       document.getElementById('setor').value = func?.setor || 'Operacional';
       document.getElementById('tipoVinculo').value = func?.tipoVinculo || 'Efetivo';
-      document.getElementById('obraId').value = func?.obraId || obras[0]?.id || '';
       document.getElementById('dataAdmissao').value = func?.dataAdmissao || '';
       document.getElementById('nascimento').value = func?.nascimento || '';
       document.getElementById('cbo').value = func?.cbo || '';
@@ -267,21 +252,11 @@
     }
 
     async function parsePlanilha(file) {
-      if (file.name.toLowerCase().endsWith('.csv')) {
-        return parseCSV(await file.text());
-      }
+      if (file.name.toLowerCase().endsWith('.csv')) return parseCSV(await file.text());
       const data = await file.arrayBuffer();
       const wb = XLSX.read(data, { type: 'array' });
       const ws = wb.Sheets[wb.SheetNames[0]];
       return XLSX.utils.sheet_to_json(ws, { defval: '' });
-    }
-
-    function obraIdFromLinha(linha) {
-      const obraId = String(linha.obraId || '').trim();
-      if (obraId && obras.some((o) => o.id === obraId)) return obraId;
-      const obraNome = String(linha.obra || linha.nomeObra || '').trim().toLowerCase();
-      if (!obraNome) return '';
-      return obras.find((o) => (o.nome || '').trim().toLowerCase() === obraNome)?.id || '';
     }
 
     function mapearLinha(raw) {
@@ -289,16 +264,14 @@
       Object.entries(raw).forEach(([k, v]) => {
         row[normalizarCabecalho(k)] = v;
       });
-
-      const funcao = String(row.funcao || row.funcao || row.cargo || '').trim();
-      const obraId = obraIdFromLinha({ obraId: row.obraid, obra: row.obra, nomeObra: row.nomeobra });
+      const funcao = String(row.funcao || row.cargo || '').trim();
       const funcionario = {
         re: String(row.re || '').trim(),
         nome: String(row.nome || '').trim(),
         funcao,
         cargo: funcao,
         setor: String(row.setor || '').trim() || 'Operacional',
-        tipoVinculo: String(row.tipovinculo || row.tipovinculo || '').trim() || 'Efetivo',
+        tipoVinculo: String(row.tipovinculo || '').trim() || 'Efetivo',
         dataAdmissao: parseDate(row.dataadmissao),
         nascimento: parseDate(row.datanascimento || row.nascimento),
         cbo: String(row.cbo || '').trim(),
@@ -311,9 +284,8 @@
         criadoEm: new Date().toISOString(),
         ativo: true
       };
-
-      const valido = Boolean(funcionario.nome && funcionario.funcao && funcionario.obraId);
-      return { funcionario, valido, motivo: valido ? '' : 'Nome, Função e Obra são obrigatórios' };
+      const valido = Boolean(funcionario.nome && funcionario.funcao);
+      return { funcionario, valido, motivo: valido ? '' : 'Nome e Função são obrigatórios' };
     }
 
     function abrirPreviewImportacao(registros) {
@@ -321,16 +293,12 @@
       const totalValidos = registros.filter((r) => r.valido).length;
       const totalInvalidos = registros.length - totalValidos;
       document.getElementById('importResumo').textContent = `${totalValidos} válidos • ${totalInvalidos} inválidos`;
-      document.getElementById('importPreviewBody').innerHTML = registros.slice(0, 15).map((r) => {
-        const obraNome = obras.find((o) => o.id === r.funcionario.obraId)?.nome || '-';
-        return `<tr>
+      document.getElementById('importPreviewBody').innerHTML = registros.slice(0, 15).map((r) => `<tr>
           <td>${escapeHtml(r.funcionario.re || '-')}</td>
           <td>${escapeHtml(r.funcionario.nome || '-')}</td>
           <td>${escapeHtml(r.funcionario.funcao || '-')}</td>
-          <td>${escapeHtml(obraNome)}</td>
           <td><span class="badge ${r.valido ? 'on' : ''}">${r.valido ? 'OK' : escapeHtml(r.motivo)}</span></td>
-        </tr>`;
-      }).join('');
+      </tr>`).join('');
       document.getElementById('modalImport').style.display = 'flex';
     }
 
@@ -353,7 +321,6 @@
     document.getElementById('novoFuncBtn').addEventListener('click', () => abrirModal());
     document.getElementById('cancelarFuncBtn').addEventListener('click', fecharModal);
     document.getElementById('searchInput').addEventListener('input', aplicarFiltros);
-    document.getElementById('obraFilter').addEventListener('change', aplicarFiltros);
 
     cardsPanel.addEventListener('click', (event) => {
       const card = event.target.closest('[data-card]');
@@ -372,7 +339,7 @@
         cargo: funcao,
         setor: document.getElementById('setor').value,
         tipoVinculo: document.getElementById('tipoVinculo').value,
-        obraId: document.getElementById('obraId').value,
+        obraId,
         dataAdmissao: document.getElementById('dataAdmissao').value,
         nascimento: document.getElementById('nascimento').value,
         cbo: document.getElementById('cbo').value.trim(),
@@ -430,8 +397,7 @@
     });
 
     document.getElementById('exportarCsvBtn').addEventListener('click', () => {
-      const obraMap = new Map(obras.map((obra) => [obra.id, obra.nome || '']));
-      exportarCSV('funcionarios.csv', ['re', 'nome', 'funcao', 'setor', 'tipoVinculo', 'dataAdmissao', 'nascimento', 'cbo', 'exp30', 'exp60', 'asoVencimento', 'salarioHora', 'salarioMes', 'obra'], filtrados.map((f) => ({
+      exportarCSV(`funcionarios-obra-${obraId}.csv`, ['re', 'nome', 'funcao', 'setor', 'tipoVinculo', 'dataAdmissao', 'nascimento', 'cbo', 'exp30', 'exp60', 'asoVencimento', 'salarioHora', 'salarioMes'], filtrados.map((f) => ({
         re: f.re || '',
         nome: f.nome || '',
         funcao: f.funcao || '',
@@ -444,18 +410,21 @@
         exp60: f.exp60 || '',
         asoVencimento: f.asoVencimento || '',
         salarioHora: f.salarioHora || 0,
-        salarioMes: f.salarioMes || 0,
-        obra: obraMap.get(f.obraId) || ''
+        salarioMes: f.salarioMes || 0
       })));
     });
 
+    if (!obraId) {
+      document.getElementById('obraTitulo').textContent = 'Obra não informada';
+      showToast('Obra inválida. Acesse pela tela de obras.', 'error');
+    }
+
     subscribeObras((data) => {
-      obras = data;
-      preencherSelectObras();
-      aplicarFiltros();
+      obraAtual = data.find((o) => o.id === obraId) || null;
+      document.getElementById('obraTitulo').textContent = obraAtual?.nome || 'Obra não encontrada';
     });
 
-    subscribeFuncionarios(null, (data) => {
+    subscribeFuncionarios(obraId, (data) => {
       funcionarios = data.map(normalizarFuncionario);
       aplicarFiltros();
     });

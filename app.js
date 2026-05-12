@@ -34,8 +34,7 @@ export function requireAuth() {
 export async function fazerLogin(email, senha) {
   try {
     const user = await login(email, senha);
-    
-    // Tenta buscar dados adicionais no Firestore, mas não é obrigatório
+
     let usuarioSistema = null;
     try {
       usuarioSistema = await getUsuarioByEmail(user.email);
@@ -75,7 +74,7 @@ onAuth((user) => {
 
 function navItems() {
   return [
-    { url: "dashboard.html", label: "Dashboard", id: "dashboard" },
+    { url: "inicio.html", label: "Início", id: "inicio" },
     { url: "funcionarios.html", label: "Funcionários", id: "funcionarios" },
     { url: "obras.html", label: "Obras", id: "obras" },
     { url: "usuarios.html", label: "Usuários", id: "usuarios" }
@@ -118,57 +117,83 @@ export function mountLayout(active) {
   }
 }
 
-export function observarEstatisticasDashboard(onChange) {
-  let obras = [];
-  let funcionarios = [];
+function mesKey(date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+}
 
-  const emitir = () => {
-    const porCargo = funcionarios.reduce((acc, f) => {
-      const cargo = f.cargo || "Sem cargo";
-      acc[cargo] = (acc[cargo] || 0) + 1;
-      return acc;
-    }, {});
-
-    onChange({
-      totalObras: obras.length,
-      totalFuncionarios: funcionarios.length,
-      totalAtivos: funcionarios.filter((f) => (f.situacao || "Ativo") === "Ativo").length,
-      porCargo
-    });
-  };
-
-  const unsubObras = subscribeObras((data) => {
-    obras = data;
-    emitir();
-  });
-
-  const unsubFuncionarios = subscribeFuncionarios(null, (data) => {
-    funcionarios = data;
-    emitir();
-  });
-
-  return () => {
-    unsubObras();
-    unsubFuncionarios();
+export function normalizarFuncionario(funcionario) {
+  const funcao = funcionario.funcao || funcionario.cargo || "";
+  return {
+    ...funcionario,
+    funcao,
+    cargo: funcao,
+    setor: funcionario.setor || "",
+    tipoVinculo: funcionario.tipoVinculo || "Efetivo"
   };
 }
 
-export {
-  getObras,
-  subscribeObras,
-  addObra,
-  updateObra,
-  deleteObra,
-  getFuncionarios,
-  subscribeFuncionarios,
-  addFuncionario,
-  updateFuncionario,
-  deleteFuncionario,
-  subscribeUsuarios,
-  addUsuario,
-  updateUsuario,
-  deleteUsuario
-};
+export function formatarDataBR(valor) {
+  if (!valor) return "-";
+  const data = new Date(valor);
+  if (Number.isNaN(data.getTime())) return "-";
+  return data.toLocaleDateString("pt-BR");
+}
+
+export function formatarMoeda(valor) {
+  const numero = Number(valor);
+  if (!Number.isFinite(numero) || numero <= 0) return "-";
+  return numero.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+export function obterContagensCards(funcionarios) {
+  return {
+    total: funcionarios.length,
+    efetivo: funcionarios.filter((f) => (f.tipoVinculo || "") === "Efetivo").length,
+    pj: funcionarios.filter((f) => (f.tipoVinculo || "") === "PJ").length,
+    operacional: funcionarios.filter((f) => (f.setor || "") === "Operacional").length,
+    adm: funcionarios.filter((f) => (f.setor || "") === "ADM").length,
+    mobilizacao: funcionarios.filter((f) => (f.tipoVinculo || "") === "Mobilização").length,
+    alteracao: funcionarios.filter((f) => (f.tipoVinculo || "") === "Alteração de Função").length,
+    terceiros: funcionarios.filter((f) => (f.tipoVinculo || "") === "Terceiros").length
+  };
+}
+
+export function calcularRanking(funcionarios, campo, limite = 5) {
+  const mapa = funcionarios.reduce((acc, f) => {
+    const valor = (f[campo] || "").trim() || "Não informado";
+    acc[valor] = (acc[valor] || 0) + 1;
+    return acc;
+  }, {});
+
+  return Object.entries(mapa)
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, limite);
+}
+
+export function calcularAdmissoes12Meses(funcionarios) {
+  const agora = new Date();
+  const meses = [];
+  for (let i = 11; i >= 0; i -= 1) {
+    const d = new Date(agora.getFullYear(), agora.getMonth() - i, 1);
+    meses.push({
+      key: mesKey(d),
+      label: d.toLocaleDateString("pt-BR", { month: "short" }).replace(".", "").toUpperCase(),
+      total: 0
+    });
+  }
+
+  const idx = new Map(meses.map((m, i) => [m.key, i]));
+  funcionarios.forEach((f) => {
+    if (!f.dataAdmissao) return;
+    const data = new Date(f.dataAdmissao);
+    if (Number.isNaN(data.getTime())) return;
+    const key = mesKey(data);
+    const pos = idx.get(key);
+    if (pos !== undefined) meses[pos].total += 1;
+  });
+
+  return meses;
+}
 
 export function escapeHtml(value) {
   return String(value ?? "").replace(/[&<>'"`]/g, (char) => ({
@@ -199,3 +224,20 @@ export function exportarCSV(nomeArquivo, colunas, linhas) {
   link.remove();
   URL.revokeObjectURL(url);
 }
+
+export {
+  getObras,
+  subscribeObras,
+  addObra,
+  updateObra,
+  deleteObra,
+  getFuncionarios,
+  subscribeFuncionarios,
+  addFuncionario,
+  updateFuncionario,
+  deleteFuncionario,
+  subscribeUsuarios,
+  addUsuario,
+  updateUsuario,
+  deleteUsuario
+};
