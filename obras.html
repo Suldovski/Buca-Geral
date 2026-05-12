@@ -13,7 +13,7 @@
       <div class="page-header"><h1>Obras</h1><button class="btn" id="novaObraBtn">+ Nova Obra</button></div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Nome</th><th>Localização</th><th>Funcionários</th><th>Ações</th></tr></thead>
+          <thead><tr><th>Nome da obra</th><th>Localização</th><th>Funcionários</th><th>Acessar</th><th>Ações</th></tr></thead>
           <tbody id="tbodyObras"></tbody>
         </table>
       </div>
@@ -34,6 +34,8 @@
     </div>
   </div>
 
+  <div id="toastContainer" class="toast-container"></div>
+
   <script type="module">
     import { mountLayout, subscribeObras, subscribeFuncionarios, addObra, updateObra, deleteObra, escapeHtml } from './app.js';
 
@@ -43,9 +45,19 @@
     const modal = document.getElementById('modalObra');
     const form = document.getElementById('formObra');
     const title = document.getElementById('modalTitle');
+
     let obras = [];
     let funcionarios = [];
     let editandoId = null;
+
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toastContainer');
+      const el = document.createElement('div');
+      el.className = `toast ${type}`;
+      el.textContent = message;
+      container.appendChild(el);
+      setTimeout(() => el.remove(), 3200);
+    }
 
     function abrirModal(obra = null) {
       editandoId = obra?.id || null;
@@ -65,9 +77,10 @@
       tbody.innerHTML = obras.map((obra) => {
         const totalFunc = funcionarios.filter((f) => f.obraId === obra.id).length;
         return `<tr>
-          <td class="cell-strong">${escapeHtml(obra.nome)}</td>
-          <td class="cell-muted">${escapeHtml(obra.localizacao)}</td>
+          <td class="cell-strong">${escapeHtml(obra.nome || '-')}</td>
+          <td class="cell-muted">${escapeHtml(obra.localizacao || '-')}</td>
           <td>${totalFunc}</td>
+          <td><a class="btn btn-sm" href="obra-[id].html?id=${encodeURIComponent(obra.id)}">Abrir tela da obra</a></td>
           <td>
             <button class="btn btn-sm btn-warning" data-edit="${obra.id}">Editar</button>
             <button class="btn btn-sm btn-danger" data-del="${obra.id}">Excluir</button>
@@ -75,9 +88,7 @@
         </tr>`;
       }).join('');
 
-      if (!obras.length) {
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center">Nenhuma obra cadastrada.</td></tr>';
-      }
+      if (!obras.length) tbody.innerHTML = '<tr><td colspan="5" style="text-align:center">Nenhuma obra cadastrada.</td></tr>';
     }
 
     document.getElementById('novaObraBtn').addEventListener('click', () => abrirModal());
@@ -88,11 +99,17 @@
       const payload = {
         nome: document.getElementById('nomeObra').value.trim().toUpperCase(),
         localizacao: document.getElementById('localizacaoObra').value.trim().toUpperCase(),
+        criadoEm: new Date().toISOString(),
         ativo: true
       };
 
-      if (editandoId) await updateObra(editandoId, payload);
-      else await addObra(payload);
+      if (editandoId) {
+        await updateObra(editandoId, payload);
+        showToast('Obra atualizada.');
+      } else {
+        await addObra(payload);
+        showToast('Obra criada. Acesse pela lista para abrir a tela individual.');
+      }
 
       fecharModal();
     });
@@ -100,14 +117,14 @@
     tbody.addEventListener('click', async (event) => {
       const idEdit = event.target.getAttribute('data-edit');
       if (idEdit) {
-        const obra = obras.find((o) => o.id === idEdit);
-        abrirModal(obra);
+        abrirModal(obras.find((o) => o.id === idEdit));
         return;
       }
 
       const idDel = event.target.getAttribute('data-del');
       if (idDel && confirm('Excluir esta obra?')) {
         await deleteObra(idDel);
+        showToast('Obra excluída.');
       }
     });
 

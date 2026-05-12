@@ -4,41 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Dashboard · Bucagrans</title>
-  <link rel="stylesheet" href="styles.css">
+  <script>window.location.replace('inicio.html');</script>
 </head>
-<body>
-  <div class="app">
-    <div id="sidebar-slot"></div>
-    <main>
-      <div class="page-header"><h1>Dashboard</h1></div>
-      <div class="grid cards-3">
-        <div class="card stat"><div><div class="label">Obras</div><div class="value" id="stat-obras">0</div></div></div>
-        <div class="card stat"><div><div class="label">Funcionários</div><div class="value" id="stat-func">0</div></div></div>
-        <div class="card stat"><div><div class="label">Ativos</div><div class="value" id="stat-ativos">0</div></div></div>
-      </div>
-      <div class="card" style="margin-top:20px;">
-        <h3>Cargos</h3>
-        <div id="lista-cargos" class="list-stack"></div>
-      </div>
-    </main>
-  </div>
-
-  <script type="module">
-    import { mountLayout, observarEstatisticasDashboard, escapeHtml } from './app.js';
-
-    mountLayout('dashboard');
-    const lista = document.getElementById('lista-cargos');
-
-    observarEstatisticasDashboard((stats) => {
-      document.getElementById('stat-obras').textContent = stats.totalObras;
-      document.getElementById('stat-func').textContent = stats.totalFuncionarios;
-      document.getElementById('stat-ativos').textContent = stats.totalAtivos;
-
-      const entries = Object.entries(stats.porCargo).sort(([, totalA], [, totalB]) => totalB - totalA);
-      lista.innerHTML = entries.length
-        ? entries.map(([cargo, total]) => `<div class="list-row"><span>${escapeHtml(cargo)}</span><strong>${total}</strong></div>`).join('')
-        : '<p class="cell-muted">Sem dados.</p>';
-    });
-  </script>
-</body>
+<body></body>
 </html>
