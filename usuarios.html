@@ -52,10 +52,10 @@
     let obras = [];
     let editandoId = null;
     const usuarioLogado = getUsuarioLogado();
+    const usuarioRhMatriz = isRhMatriz(usuarioLogado);
 
-    if (!isRhMatriz(usuarioLogado)) {
-      alert('Somente RH Matriz pode gerenciar usuários.');
-      window.location.href = 'inicio.html';
+    if (!usuarioRhMatriz) {
+      document.getElementById('novoUsuarioBtn').style.display = 'none';
     }
 
     function preencherObrasSelect() {
@@ -77,8 +77,8 @@
           <td>${escapeHtml(obraNome)}</td>
           <td>
             <div class="action-group">
-              <button class="btn btn-sm btn-warning action-btn" title="Editar" data-edit="${u.id}">✏️</button>
-              <button class="btn btn-sm btn-danger action-btn" title="Apagar" data-del="${u.id}">🗑️</button>
+              <button class="btn btn-sm btn-warning action-btn" title="Editar" data-edit="${u.id}" ${usuarioRhMatriz ? '' : 'disabled'}>✏️</button>
+              <button class="btn btn-sm btn-danger action-btn" title="Apagar" data-del="${u.id}" ${usuarioRhMatriz ? '' : 'disabled'}>🗑️</button>
             </div>
           </td>
         </tr>`;
@@ -115,11 +115,18 @@
       document.getElementById('usuarioEmail').disabled = false;
     }
 
-    document.getElementById('novoUsuarioBtn').addEventListener('click', () => abrirModal());
+    document.getElementById('novoUsuarioBtn').addEventListener('click', () => {
+      if (!usuarioRhMatriz) return;
+      abrirModal();
+    });
     document.getElementById('cancelarUsuarioBtn').addEventListener('click', fecharModal);
 
     form.addEventListener('submit', async (event) => {
       event.preventDefault();
+      if (!usuarioRhMatriz) {
+        alert('Somente RH Matriz pode alterar usuários.');
+        return;
+      }
       const nome = document.getElementById('usuarioNome').value.trim();
       const email = document.getElementById('usuarioEmail').value.trim();
       const perfil = document.getElementById('usuarioPerfil').value;
@@ -146,6 +153,7 @@
     });
 
     tbody.addEventListener('click', async (event) => {
+      if (!usuarioRhMatriz) return;
       const idEdit = event.target.getAttribute('data-edit');
       if (idEdit) {
         abrirModal(usuarios.find((u) => u.id === idEdit));
