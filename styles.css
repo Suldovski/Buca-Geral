@@ -108,6 +108,19 @@ tr:last-child td { border-bottom: none; }
 
 .back-link { display: inline-flex; margin-bottom: 12px; text-decoration: none; color: #2563eb; }
 
+@media (prefers-reduced-motion: reduce) {
+  .card,
+  .stat-card {
+    transition: none;
+  }
+  .card:hover,
+  .card:focus-within,
+  .stat-card:hover,
+  .stat-card:focus-visible {
+    transform: none;
+  }
+}
+
 @media (max-width: 1200px) {
   .stats-panel { grid-template-columns: repeat(4, minmax(120px, 1fr)); }
 }
