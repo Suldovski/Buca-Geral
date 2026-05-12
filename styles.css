@@ -58,7 +58,7 @@ tr:last-child td { border-bottom: none; }
   padding: 10px 8px;
   font-size: clamp(11px, 0.82vw, 14px);
   white-space: normal;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 .table-fit .action-group { flex-wrap: wrap; }
 
