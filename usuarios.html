@@ -58,7 +58,7 @@
       const html = '<option value="">Sem vínculo</option>' + obras.map((o) => `<option value="${o.id}">${escapeHtml(o.nome)}</option>`).join('');
       document.getElementById('usuarioObraId').innerHTML = html;
       document.getElementById('usuarioPerfil').innerHTML = ['<option value="RH Matriz">RH Matriz</option>', ...obras.map((o) => {
-        const perfilAcesso = o.perfilAcesso || `RH + ${o.nome}`;
+        const perfilAcesso = o.perfilAcesso || `RH  ${o.nome}`;
         return `<option value="${escapeHtml(perfilAcesso)}">${escapeHtml(perfilAcesso)}</option>`;
       })].join('');
     }
