@@ -52,13 +52,16 @@ th { background: #f8fafc; color: #64748b; font-size: 14px; }
 tr:last-child td { border-bottom: none; }
 .cell-strong { font-weight: 600; }
 .cell-muted { color: #64748b; }
-.table-fit { table-layout: fixed; }
+.table-fit { table-layout: auto; min-width: 1500px; }
 .table-fit th,
 .table-fit td {
   padding: 10px 8px;
   font-size: clamp(11px, 0.82vw, 14px);
   white-space: normal;
   overflow-wrap: break-word;
+}
+.table-fit th {
+  white-space: nowrap;
 }
 .table-fit .action-group { flex-wrap: wrap; }
 

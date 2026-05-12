@@ -54,10 +54,6 @@
     const usuarioLogado = getUsuarioLogado();
     const usuarioRhMatriz = isRhMatriz(usuarioLogado);
 
-    if (!usuarioRhMatriz) {
-      document.getElementById('novoUsuarioBtn').style.display = 'none';
-    }
-
     function preencherObrasSelect() {
       const html = '<option value="">Sem vínculo</option>' + obras.map((o) => `<option value="${o.id}">${escapeHtml(o.nome)}</option>`).join('');
       document.getElementById('usuarioObraId').innerHTML = html;
@@ -116,17 +112,12 @@
     }
 
     document.getElementById('novoUsuarioBtn').addEventListener('click', () => {
-      if (!usuarioRhMatriz) return;
       abrirModal();
     });
     document.getElementById('cancelarUsuarioBtn').addEventListener('click', fecharModal);
 
     form.addEventListener('submit', async (event) => {
       event.preventDefault();
-      if (!usuarioRhMatriz) {
-        alert('Somente RH Matriz pode alterar usuários.');
-        return;
-      }
       const nome = document.getElementById('usuarioNome').value.trim();
       const email = document.getElementById('usuarioEmail').value.trim();
       const perfil = document.getElementById('usuarioPerfil').value;
@@ -139,6 +130,10 @@
       }
 
       if (editandoId) {
+        if (!usuarioRhMatriz) {
+          alert('Somente admin ou RH Matriz pode alterar usuários existentes.');
+          return;
+        }
         await updateUsuario(editandoId, { nome, perfil, obraId });
       } else {
         const senha = document.getElementById('usuarioSenha').value;
