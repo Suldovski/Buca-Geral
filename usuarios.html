@@ -94,7 +94,7 @@
       document.getElementById('usuarioEmail').disabled = !!usuario;
       const perfilAtual = usuario?.perfil || 'RH Matriz';
       if (perfilAtual === 'Obra' && usuario?.obraId) {
-        const obraPerfil = obras.find((o) => o.id === usuario.obraId)?.perfilAcesso || `RH + ${obras.find((o) => o.id === usuario.obraId)?.nome || ''}`;
+        const obraPerfil = obras.find((o) => o.id === usuario.obraId)?.perfilAcesso || `RH  ${obras.find((o) => o.id === usuario.obraId)?.nome || ''}`;
         document.getElementById('usuarioPerfil').value = obraPerfil;
       } else {
         document.getElementById('usuarioPerfil').value = perfilAtual;
@@ -125,7 +125,7 @@
       const obraId = perfil === 'RH Matriz' ? null : obraIdCampo;
 
       if (perfil !== 'RH Matriz' && !obraId) {
-        alert('Selecione a obra para perfis RH + Obra.');
+        alert('Selecione a obra para perfis RH  Obra.');
         return;
       }
 
@@ -176,7 +176,7 @@
       if (!event.target.value) return;
       const obra = obras.find((o) => o.id === event.target.value);
       if (!obra) return;
-      document.getElementById('usuarioPerfil').value = `RH + ${obra.nome}`;
+      document.getElementById('usuarioPerfil').value = `RH  ${obra.nome}`;
     });
   </script>
 </body>
