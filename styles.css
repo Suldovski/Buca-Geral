@@ -52,7 +52,7 @@ th { background: #f8fafc; color: #64748b; font-size: 14px; }
 tr:last-child td { border-bottom: none; }
 .cell-strong { font-weight: 600; }
 .cell-muted { color: #64748b; }
-.table-fit { table-layout: auto; min-width: 1500px; }
+.table-fit { table-layout: auto; min-width: max-content; }
 .table-fit th,
 .table-fit td {
   padding: 10px 8px;
