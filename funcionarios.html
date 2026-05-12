@@ -110,7 +110,8 @@
       getUsuarioLogado,
       filtrarObrasPorAcesso,
       filtrarFuncionariosPorAcesso,
-      isRhMatriz
+      isRhMatriz,
+      dataVencCell
     } from './app.js';
 
     mountLayout('funcionarios');
@@ -191,19 +192,6 @@
       renderRankings(filtrados);
     }
 
-    function dataVencCell(dateStr) {
-      const formatted = formatarDataBR(dateStr);
-      if (!dateStr || formatted === '-') return `<td>${formatted}</td>`;
-      const date = new Date(dateStr);
-      if (isNaN(date.getTime())) return `<td>${formatted}</td>`;
-      const now = new Date();
-      const diffDays = Math.floor((date - now) / (1000 * 60 * 60 * 24));
-      if (diffDays < 0) return `<td class="exp-critical">${formatted}</td>`;
-      if (diffDays <= 30) return `<td class="exp-warn">${formatted}</td>`;
-      if (diffDays <= 60) return `<td class="exp-caution">${formatted}</td>`;
-      return `<td>${formatted}</td>`;
-    }
-
     function renderTabela() {
       tbody.innerHTML = filtrados.map((f) => {
         const obraNome = obras.find((o) => o.id === f.obraId)?.nome || '-';
@@ -218,9 +206,9 @@
           <td>${formatarDataBR(f.dataAdmissao)}</td>
           <td>${formatarDataBR(f.nascimento)}</td>
           <td>${escapeHtml(f.cbo || '-')}</td>
-          ${dataVencCell(f.exp30)}
-          ${dataVencCell(f.exp60)}
-          ${dataVencCell(f.asoVencimento)}
+          ${dataVencCell(f.exp30, formatarDataBR)}
+          ${dataVencCell(f.exp60, formatarDataBR)}
+          ${dataVencCell(f.asoVencimento, formatarDataBR)}
           <td>${formatarMoeda(f.salarioHora)}</td>
           <td>${formatarMoeda(f.salarioMes)}</td>
           <td>${escapeHtml(obraNome)}</td>

@@ -31,8 +31,8 @@
         <div class="field" id="senhaField"><label for="usuarioSenha">Senha inicial</label><input id="usuarioSenha" class="input" type="password"></div>
         <div class="field" id="resetSenhaField" style="display:none">
           <label>Redefinir Senha</label>
-          <button type="button" class="btn btn-outline" id="resetSenhaBtn" style="width:100%">📧 Enviar email de redefinição</button>
-          <p class="cell-muted" style="font-size:11px;margin-top:4px">Envia um link de redefinição ao email do usuário.</p>
+          <button type="button" class="btn btn-outline btn-full-width" id="resetSenhaBtn">📧 Enviar email de redefinição</button>
+          <p class="cell-muted help-text">Envia um link de redefinição ao email do usuário.</p>
         </div>
         <div class="dialog-foot">
           <button type="button" class="btn btn-outline" id="cancelarUsuarioBtn">Cancelar</button>
@@ -45,7 +45,7 @@
   <div id="toastContainer" class="toast-container"></div>
 
   <script type="module">
-    import { mountLayout, subscribeUsuarios, subscribeObras, addUsuario, updateUsuario, deleteUsuario, escapeHtml, getUsuarioLogado, isRhMatriz, resetSenha } from './app.js';
+    import { mountLayout, subscribeUsuarios, subscribeObras, addUsuario, updateUsuario, deleteUsuario, escapeHtml, getUsuarioLogado, isRhMatriz, resetSenha, obraPerfilAcesso } from './app.js';
 
     mountLayout('usuarios');
 
@@ -83,8 +83,8 @@
       const html = '<option value="">Sem vínculo</option>' + obras.map((o) => `<option value="${o.id}">${escapeHtml(o.nome)}</option>`).join('');
       document.getElementById('usuarioObraId').innerHTML = html;
       document.getElementById('usuarioPerfil').innerHTML = ['<option value="RH Matriz">RH Matriz</option>', ...obras.map((o) => {
-        const perfilAcesso = o.perfilAcesso || `RH ${o.nome}`;
-        return `<option value="${escapeHtml(perfilAcesso)}">${escapeHtml(perfilAcesso)}</option>`;
+        const perfil = obraPerfilAcesso(o);
+        return `<option value="${escapeHtml(perfil)}">${escapeHtml(perfil)}</option>`;
       })].join('');
     }
 
@@ -123,7 +123,9 @@
       const perfilAtual = usuario?.perfil || 'RH Matriz';
       if (perfilAtual !== 'RH Matriz' && usuario?.obraId) {
         const obraEncontrada = obras.find((o) => o.id === usuario.obraId);
-        const obraPerfil = obraEncontrada?.perfilAcesso || `RH ${obraEncontrada?.nome || ''}`;
+        const obraPerfil = obraEncontrada
+          ? obraPerfilAcesso(obraEncontrada)
+          : perfilAtual;
         document.getElementById('usuarioPerfil').value = obraPerfil;
       } else {
         document.getElementById('usuarioPerfil').value = perfilAtual;
@@ -215,7 +217,7 @@
       if (!event.target.value) return;
       const obra = obras.find((o) => o.id === event.target.value);
       if (!obra) return;
-      document.getElementById('usuarioPerfil').value = obra.perfilAcesso || `RH ${obra.nome}`;
+      document.getElementById('usuarioPerfil').value = obraPerfilAcesso(obra);
     });
   </script>
 </body>

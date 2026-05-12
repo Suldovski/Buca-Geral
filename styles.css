@@ -111,6 +111,9 @@ tr:last-child td { border-bottom: none; }
 .stat-card:nth-child(7) { background: linear-gradient(135deg, #fefce8, #ffffff); border-color: #fef08a; }
 .stat-card:nth-child(8) { background: linear-gradient(135deg, #eef2ff, #ffffff); border-color: #c7d2fe; }
 
+.btn-full-width { width: 100%; }
+.help-text { font-size: 11px; margin-top: 4px; }
+
 .bars { display: flex; align-items: flex-end; gap: 8px; height: 170px; margin-top: 12px; }
 .bars .col { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; }
 .bars .bar { width: 100%; background: #1e3c72; border-radius: 4px 4px 0 0; min-height: 4px; cursor: help; }
