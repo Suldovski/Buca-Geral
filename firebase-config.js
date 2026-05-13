@@ -16,7 +16,8 @@ import {
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
-  createUserWithEmailAndPassword
+  createUserWithEmailAndPassword,
+  sendPasswordResetEmail
 } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
 
 const firebaseConfig = {
@@ -150,6 +151,10 @@ export async function updateUsuario(id, usuario) {
 
 export async function deleteUsuario(id) {
   await deleteDoc(doc(db, "usuarios_sistema", id));
+}
+
+export async function resetSenha(email) {
+  await sendPasswordResetEmail(auth, email);
 }
 
 export async function getUsuarioByEmail(email) {

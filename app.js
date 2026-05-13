@@ -16,7 +16,8 @@ import {
   subscribeUsuarios,
   addUsuario,
   updateUsuario,
-  deleteUsuario
+  deleteUsuario,
+  resetSenha
 } from "./firebase-config.js";
 
 let usuarioLogado = JSON.parse(localStorage.getItem("usuario") || "null");
@@ -136,7 +137,11 @@ export function isRhMatriz(usuario = getUsuarioLogado()) {
 
 export function isRhObra(usuario = getUsuarioLogado()) {
   const perfil = normalizarTextoAcesso(usuario?.perfil);
-  return perfil.startsWith("RH + ");
+  return perfil.startsWith("RH ") && perfil !== "RH MATRIZ" && perfil.length > "RH ".length;
+}
+
+export function obraPerfilAcesso(obra) {
+  return (obra?.perfilAcesso || `RH ${obra?.nome || ""}`).trim();
 }
 
 export function podeAcessarObra(obraId, usuario = getUsuarioLogado()) {
@@ -210,6 +215,19 @@ export function calcularRanking(funcionarios, campo, limite = 5) {
     .slice(0, limite);
 }
 
+export function dataVencCell(dateStr, formatarDataBR) {
+  const formatted = formatarDataBR(dateStr);
+  if (!dateStr || formatted === "-") return `<td>${formatted}</td>`;
+  const date = new Date(dateStr);
+  if (Number.isNaN(date.getTime())) return `<td>${formatted}</td>`;
+  const now = new Date();
+  const diffDays = Math.floor((date - now) / (1000 * 60 * 60 * 24));
+  if (diffDays < 0) return `<td class="exp-critical">${formatted}</td>`;
+  if (diffDays <= 30) return `<td class="exp-warn">${formatted}</td>`;
+  if (diffDays <= 60) return `<td class="exp-caution">${formatted}</td>`;
+  return `<td>${formatted}</td>`;
+}
+
 export function calcularAdmissoes12Meses(funcionarios) {
   const agora = new Date();
   const meses = [];
@@ -279,5 +297,6 @@ export {
   subscribeUsuarios,
   addUsuario,
   updateUsuario,
-  deleteUsuario
+  deleteUsuario,
+  resetSenha
 };

@@ -13,8 +13,8 @@
       <div class="page-header"><h1>Início</h1></div>
 
       <div class="grid cards-2">
-        <div class="card stat inicio-stat"><div><div class="label">Obras</div><div class="value" id="stat-obras">0</div><div class="inicio-stat-note" id="stat-obras-hover">Admissões no mês: 0</div></div></div>
-        <div class="card stat inicio-stat"><div><div class="label">Funcionários</div><div class="value" id="stat-func">0</div><div class="inicio-stat-note" id="stat-func-hover">Admissões no mês: 0</div></div></div>
+        <div class="card stat"><div><div class="label">Obras</div><div class="value" id="stat-obras">0</div></div></div>
+        <div class="card stat"><div><div class="label">Funcionários</div><div class="value" id="stat-func">0</div></div></div>
       </div>
 
       <div class="grid grid-2" style="margin-top:20px;">
@@ -48,8 +48,6 @@
 
     const statObras = document.getElementById('stat-obras');
     const statFunc = document.getElementById('stat-func');
-    const statObrasHover = document.getElementById('stat-obras-hover');
-    const statFuncHover = document.getElementById('stat-func-hover');
     const chart = document.getElementById('admissoesChart');
     const ranking = document.getElementById('rankingCargos');
 
@@ -63,10 +61,6 @@
 
       const serie = calcularAdmissoes12Meses(funcionarios);
       const max = Math.max(1, ...serie.map((m) => m.total));
-      const mesAtual = serie[serie.length - 1] || { label: '-', total: 0 };
-      const notaMes = `Admissões em ${mesAtual.label}: ${mesAtual.total}`;
-      statObrasHover.textContent = notaMes;
-      statFuncHover.textContent = notaMes;
       chart.innerHTML = serie.map((m) => `
         <div class="col">
           <div class="bar" title="${escapeHtml(m.label)}: ${m.total} admiss${m.total === 1 ? 'ão' : 'ões'}" style="height:${Math.max(4, (m.total / max) * 140)}px"></div>

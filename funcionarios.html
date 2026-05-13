@@ -25,6 +25,12 @@
 
       <input id="importFile" type="file" accept=".csv,.xlsx,.xls" hidden>
 
+      <div class="exp-legend">
+        <span class="exp-legend-item"><span class="exp-dot exp-critical"></span> Vencido</span>
+        <span class="exp-legend-item"><span class="exp-dot exp-warn"></span> Vence em ≤ 30 dias</span>
+        <span class="exp-legend-item"><span class="exp-dot exp-caution"></span> Vence em ≤ 60 dias</span>
+      </div>
+
       <div class="table-wrap">
         <table class="table-fit">
           <thead><tr><th>RE</th><th>Nome</th><th>CPF</th><th>Função</th><th>Setor</th><th>Tipo Vínculo</th><th>Situação</th><th>Admissão</th><th>Nascimento</th><th>CBO</th><th>Exp.30</th><th>Exp.60</th><th>Venc. ASO</th><th>Salário/Hora</th><th>Salário/Mês</th><th>Obra</th><th>Ações</th></tr></thead>
@@ -104,7 +110,8 @@
       getUsuarioLogado,
       filtrarObrasPorAcesso,
       filtrarFuncionariosPorAcesso,
-      isRhMatriz
+      isRhMatriz,
+      dataVencCell
     } from './app.js';
 
     mountLayout('funcionarios');
@@ -199,9 +206,9 @@
           <td>${formatarDataBR(f.dataAdmissao)}</td>
           <td>${formatarDataBR(f.nascimento)}</td>
           <td>${escapeHtml(f.cbo || '-')}</td>
-          <td>${formatarDataBR(f.exp30)}</td>
-          <td>${formatarDataBR(f.exp60)}</td>
-          <td>${formatarDataBR(f.asoVencimento)}</td>
+          ${dataVencCell(f.exp30, formatarDataBR)}
+          ${dataVencCell(f.exp60, formatarDataBR)}
+          ${dataVencCell(f.asoVencimento, formatarDataBR)}
           <td>${formatarMoeda(f.salarioHora)}</td>
           <td>${formatarMoeda(f.salarioMes)}</td>
           <td>${escapeHtml(obraNome)}</td>

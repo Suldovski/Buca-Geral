@@ -13,7 +13,7 @@
       <div class="page-header"><h1>Usuários do sistema</h1><button class="btn" id="novoUsuarioBtn">+ Novo Usuário</button></div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Obra</th><th>Ações</th></tr></thead>
+          <thead><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Obra</th><th>Cadastrado em</th><th>Ações</th></tr></thead>
           <tbody id="tbodyUsuarios"></tbody>
         </table>
       </div>
@@ -29,6 +29,11 @@
         <div class="field"><label for="usuarioPerfil">Perfil</label><select id="usuarioPerfil" class="select"><option value="RH Matriz">RH Matriz</option></select></div>
         <div class="field"><label for="usuarioObraId">Obra</label><select id="usuarioObraId" class="select"><option value="">Sem vínculo</option></select></div>
         <div class="field" id="senhaField"><label for="usuarioSenha">Senha inicial</label><input id="usuarioSenha" class="input" type="password"></div>
+        <div class="field" id="resetSenhaField" style="display:none">
+          <label>Redefinir Senha</label>
+          <button type="button" class="btn btn-outline btn-full-width" id="resetSenhaBtn">📧 Enviar email de redefinição</button>
+          <p class="cell-muted help-text">Envia um link de redefinição ao email do usuário.</p>
+        </div>
         <div class="dialog-foot">
           <button type="button" class="btn btn-outline" id="cancelarUsuarioBtn">Cancelar</button>
           <button type="submit" class="btn">Salvar</button>
@@ -37,8 +42,10 @@
     </div>
   </div>
 
+  <div id="toastContainer" class="toast-container"></div>
+
   <script type="module">
-    import { mountLayout, subscribeUsuarios, subscribeObras, addUsuario, updateUsuario, deleteUsuario, escapeHtml, getUsuarioLogado, isRhMatriz } from './app.js';
+    import { mountLayout, subscribeUsuarios, subscribeObras, addUsuario, updateUsuario, deleteUsuario, escapeHtml, getUsuarioLogado, isRhMatriz, resetSenha, obraPerfilAcesso } from './app.js';
 
     mountLayout('usuarios');
 
@@ -46,20 +53,38 @@
     const modal = document.getElementById('modalUsuario');
     const form = document.getElementById('formUsuario');
     const senhaField = document.getElementById('senhaField');
+    const resetSenhaField = document.getElementById('resetSenhaField');
     const title = document.getElementById('usuarioModalTitle');
 
     let usuarios = [];
     let obras = [];
     let editandoId = null;
+    let editandoEmail = null;
     const usuarioLogado = getUsuarioLogado();
     const usuarioRhMatriz = isRhMatriz(usuarioLogado);
+
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toastContainer');
+      const el = document.createElement('div');
+      el.className = `toast ${type}`;
+      el.textContent = message;
+      container.appendChild(el);
+      setTimeout(() => el.remove(), 3200);
+    }
+
+    function formatarData(isoStr) {
+      if (!isoStr) return '-';
+      const d = new Date(isoStr);
+      if (isNaN(d.getTime())) return '-';
+      return d.toLocaleDateString('pt-BR');
+    }
 
     function preencherObrasSelect() {
       const html = '<option value="">Sem vínculo</option>' + obras.map((o) => `<option value="${o.id}">${escapeHtml(o.nome)}</option>`).join('');
       document.getElementById('usuarioObraId').innerHTML = html;
       document.getElementById('usuarioPerfil').innerHTML = ['<option value="RH Matriz">RH Matriz</option>', ...obras.map((o) => {
-        const perfilAcesso = o.perfilAcesso || `RH  ${o.nome}`;
-        return `<option value="${escapeHtml(perfilAcesso)}">${escapeHtml(perfilAcesso)}</option>`;
+        const perfil = obraPerfilAcesso(o);
+        return `<option value="${escapeHtml(perfil)}">${escapeHtml(perfil)}</option>`;
       })].join('');
     }
 
@@ -67,10 +92,11 @@
       tbody.innerHTML = usuarios.map((u) => {
         const obraNome = obras.find((o) => o.id === u.obraId)?.nome || '-';
         return `<tr>
-          <td>${escapeHtml(u.nome)}</td>
-          <td>${escapeHtml(u.email)}</td>
+          <td class="cell-strong">${escapeHtml(u.nome)}</td>
+          <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escapeHtml(u.email)}">${escapeHtml(u.email)}</td>
           <td>${escapeHtml(u.perfil || '-')}</td>
           <td>${escapeHtml(obraNome)}</td>
+          <td class="cell-muted">${formatarData(u.criadoEm)}</td>
           <td>
             <div class="action-group">
               <button class="btn btn-sm btn-warning action-btn" title="Editar" data-edit="${u.id}" ${usuarioRhMatriz ? '' : 'disabled'}>✏️</button>
@@ -81,26 +107,30 @@
       }).join('');
 
       if (!usuarios.length) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center">Nenhum usuário cadastrado.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center">Nenhum usuário cadastrado.</td></tr>';
       }
     }
 
     function abrirModal(usuario = null) {
       editandoId = usuario?.id || null;
+      editandoEmail = usuario?.email || null;
       title.textContent = usuario ? 'Editar Usuário' : 'Novo Usuário';
       senhaField.style.display = usuario ? 'none' : 'block';
+      resetSenhaField.style.display = usuario ? 'block' : 'none';
       document.getElementById('usuarioNome').value = usuario?.nome || '';
       document.getElementById('usuarioEmail').value = usuario?.email || '';
       document.getElementById('usuarioEmail').disabled = !!usuario;
       const perfilAtual = usuario?.perfil || 'RH Matriz';
-      if (perfilAtual === 'Obra' && usuario?.obraId) {
-        const obraPerfil = obras.find((o) => o.id === usuario.obraId)?.perfilAcesso || `RH  ${obras.find((o) => o.id === usuario.obraId)?.nome || ''}`;
+      if (perfilAtual !== 'RH Matriz' && usuario?.obraId) {
+        const obraEncontrada = obras.find((o) => o.id === usuario.obraId);
+        const obraPerfil = obraEncontrada
+          ? obraPerfilAcesso(obraEncontrada)
+          : perfilAtual;
         document.getElementById('usuarioPerfil').value = obraPerfil;
       } else {
         document.getElementById('usuarioPerfil').value = perfilAtual;
       }
       document.getElementById('usuarioObraId').value = usuario?.obraId || '';
-      document.getElementById('usuarioSenha').value = '';
       modal.style.display = 'flex';
     }
 
@@ -108,8 +138,19 @@
       modal.style.display = 'none';
       form.reset();
       editandoId = null;
+      editandoEmail = null;
       document.getElementById('usuarioEmail').disabled = false;
     }
+
+    document.getElementById('resetSenhaBtn').addEventListener('click', async () => {
+      if (!editandoEmail) return;
+      try {
+        await resetSenha(editandoEmail);
+        showToast(`Email de redefinição enviado para ${editandoEmail}.`);
+      } catch (err) {
+        showToast('Falha ao enviar email de redefinição.', 'error');
+      }
+    });
 
     document.getElementById('novoUsuarioBtn').addEventListener('click', () => {
       abrirModal();
@@ -125,20 +166,20 @@
       const obraId = perfil === 'RH Matriz' ? null : obraIdCampo;
 
       if (perfil !== 'RH Matriz' && !obraId) {
-        alert('Selecione a obra para perfis RH  Obra.');
+        showToast('Selecione a obra para perfis de obra.', 'error');
         return;
       }
 
       if (editandoId) {
         if (!usuarioRhMatriz) {
-          alert('Somente admin ou RH Matriz pode alterar usuários existentes.');
+          showToast('Somente admin ou RH Matriz pode alterar usuários existentes.', 'error');
           return;
         }
         await updateUsuario(editandoId, { nome, perfil, obraId });
       } else {
         const senha = document.getElementById('usuarioSenha').value;
         if (!senha) {
-          alert('Informe a senha inicial.');
+          showToast('Informe a senha inicial.', 'error');
           return;
         }
         await addUsuario({ nome, email, perfil, obraId, senha });
@@ -176,7 +217,7 @@
       if (!event.target.value) return;
       const obra = obras.find((o) => o.id === event.target.value);
       if (!obra) return;
-      document.getElementById('usuarioPerfil').value = `RH  ${obra.nome}`;
+      document.getElementById('usuarioPerfil').value = obraPerfilAcesso(obra);
     });
   </script>
 </body>
