@@ -17,7 +17,7 @@ import {
   addUsuario,
   updateUsuario,
   deleteUsuario,
-  resetSenha
+  redefinirSenhaUsuario
 } from "./firebase-config.js";
 
 let usuarioLogado = JSON.parse(localStorage.getItem("usuario") || "null");
@@ -298,5 +298,5 @@ export {
   addUsuario,
   updateUsuario,
   deleteUsuario,
-  resetSenha
+  redefinirSenhaUsuario
 };
