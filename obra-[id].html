@@ -310,12 +310,48 @@
       });
     }
 
+    function localizarLinhaCabecalho(matriz) {
+      const limite = Math.min(matriz.length, 25);
+      for (let i = 0; i < limite; i += 1) {
+        const normalizadas = (matriz[i] || []).map((celula) => normalizarCabecalho(celula));
+        const temNome = normalizadas.includes('nome');
+        const temFuncao = normalizadas.includes('funcao') || normalizadas.includes('cargo');
+        if (temNome && temFuncao) return i;
+      }
+      return -1;
+    }
+
+    function montarObjetosDaMatriz(matriz) {
+      if (!matriz.length) return [];
+      const linhaCabecalho = localizarLinhaCabecalho(matriz);
+      if (linhaCabecalho < 0) {
+        throw new Error('Cabeçalho inválido. Inclua as colunas NOME e FUNÇÃO (ou CARGO).');
+      }
+
+      const headers = (matriz[linhaCabecalho] || []).map((h) => String(h || '').trim());
+      const linhas = [];
+      for (let i = linhaCabecalho + 1; i < matriz.length; i += 1) {
+        const cols = matriz[i] || [];
+        const item = {};
+        let temConteudo = false;
+        headers.forEach((h, index) => {
+          if (!h) return;
+          const valor = cols[index] ?? '';
+          if (String(valor).trim() !== '') temConteudo = true;
+          item[h] = valor;
+        });
+        if (temConteudo) linhas.push(item);
+      }
+      return linhas;
+    }
+
     async function parsePlanilha(file) {
       if (file.name.toLowerCase().endsWith('.csv')) return parseCSV(await file.text());
       const data = await file.arrayBuffer();
       const wb = XLSX.read(data, { type: 'array' });
       const ws = wb.Sheets[wb.SheetNames[0]];
-      return XLSX.utils.sheet_to_json(ws, { defval: '' });
+      const matriz = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: true });
+      return montarObjetosDaMatriz(matriz);
     }
 
     function mapearLinha(raw) {
@@ -421,7 +457,7 @@
         abrirPreviewImportacao(registros);
       } catch (error) {
         console.error(error);
-        showToast('Falha ao ler planilha.', 'error');
+        showToast(error?.message || 'Falha ao ler planilha.', 'error');
       }
     }
 

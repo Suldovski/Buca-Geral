@@ -29,10 +29,10 @@
         <div class="field"><label for="usuarioPerfil">Perfil</label><select id="usuarioPerfil" class="select"><option value="RH Matriz">RH Matriz</option></select></div>
         <div class="field"><label for="usuarioObraId">Obra</label><select id="usuarioObraId" class="select"><option value="">Sem vínculo</option></select></div>
         <div class="field" id="senhaField"><label for="usuarioSenha">Senha inicial</label><input id="usuarioSenha" class="input" type="password"></div>
-        <div class="field" id="resetSenhaField" style="display:none">
-          <label>Redefinir Senha</label>
-          <button type="button" class="btn btn-outline btn-full-width" id="resetSenhaBtn">📧 Enviar email de redefinição</button>
-          <p class="cell-muted help-text">Envia um link de redefinição ao email do usuário.</p>
+        <div class="field" id="novaSenhaField" style="display:none">
+          <label for="usuarioNovaSenha">Nova senha</label>
+          <input id="usuarioNovaSenha" class="input" type="password" placeholder="Digite apenas se quiser redefinir">
+          <p class="cell-muted help-text">Ao salvar, a nova senha será aplicada imediatamente.</p>
         </div>
         <div class="dialog-foot">
           <button type="button" class="btn btn-outline" id="cancelarUsuarioBtn">Cancelar</button>
@@ -45,7 +45,7 @@
   <div id="toastContainer" class="toast-container"></div>
 
   <script type="module">
-    import { mountLayout, subscribeUsuarios, subscribeObras, addUsuario, updateUsuario, deleteUsuario, escapeHtml, getUsuarioLogado, isRhMatriz, resetSenha, obraPerfilAcesso } from './app.js';
+    import { mountLayout, subscribeUsuarios, subscribeObras, addUsuario, updateUsuario, deleteUsuario, escapeHtml, getUsuarioLogado, isRhMatriz, redefinirSenhaUsuario, obraPerfilAcesso } from './app.js';
 
     mountLayout('usuarios');
 
@@ -53,13 +53,13 @@
     const modal = document.getElementById('modalUsuario');
     const form = document.getElementById('formUsuario');
     const senhaField = document.getElementById('senhaField');
-    const resetSenhaField = document.getElementById('resetSenhaField');
+    const novaSenhaField = document.getElementById('novaSenhaField');
     const title = document.getElementById('usuarioModalTitle');
 
     let usuarios = [];
     let obras = [];
     let editandoId = null;
-    let editandoEmail = null;
+    let editandoUsuario = null;
     const usuarioLogado = getUsuarioLogado();
     const usuarioRhMatriz = isRhMatriz(usuarioLogado);
 
@@ -113,12 +113,13 @@
 
     function abrirModal(usuario = null) {
       editandoId = usuario?.id || null;
-      editandoEmail = usuario?.email || null;
+      editandoUsuario = usuario || null;
       title.textContent = usuario ? 'Editar Usuário' : 'Novo Usuário';
       senhaField.style.display = usuario ? 'none' : 'block';
-      resetSenhaField.style.display = usuario ? 'block' : 'none';
+      novaSenhaField.style.display = usuario ? 'block' : 'none';
       document.getElementById('usuarioNome').value = usuario?.nome || '';
       document.getElementById('usuarioEmail').value = usuario?.email || '';
+      document.getElementById('usuarioNovaSenha').value = '';
       document.getElementById('usuarioEmail').disabled = !!usuario;
       const perfilAtual = usuario?.perfil || 'RH Matriz';
       if (perfilAtual !== 'RH Matriz' && usuario?.obraId) {
@@ -138,19 +139,9 @@
       modal.style.display = 'none';
       form.reset();
       editandoId = null;
-      editandoEmail = null;
+      editandoUsuario = null;
       document.getElementById('usuarioEmail').disabled = false;
     }
-
-    document.getElementById('resetSenhaBtn').addEventListener('click', async () => {
-      if (!editandoEmail) return;
-      try {
-        await resetSenha(editandoEmail);
-        showToast(`Email de redefinição enviado para ${editandoEmail}.`);
-      } catch (err) {
-        showToast('Falha ao enviar email de redefinição.', 'error');
-      }
-    });
 
     document.getElementById('novoUsuarioBtn').addEventListener('click', () => {
       abrirModal();
@@ -170,22 +161,33 @@
         return;
       }
 
-      if (editandoId) {
-        if (!usuarioRhMatriz) {
-          showToast('Somente admin ou RH Matriz pode alterar usuários existentes.', 'error');
-          return;
+      try {
+        if (editandoId) {
+          if (!usuarioRhMatriz) {
+            showToast('Somente admin ou RH Matriz pode alterar usuários existentes.', 'error');
+            return;
+          }
+          const novaSenha = document.getElementById('usuarioNovaSenha').value;
+          await updateUsuario(editandoId, { nome, perfil, obraId });
+          if (novaSenha.trim()) {
+            await redefinirSenhaUsuario(editandoUsuario?.authUid, novaSenha);
+            showToast('Usuário atualizado e senha redefinida com sucesso.');
+          } else {
+            showToast('Usuário atualizado com sucesso.');
+          }
+        } else {
+          const senha = document.getElementById('usuarioSenha').value;
+          if (!senha) {
+            showToast('Informe a senha inicial.', 'error');
+            return;
+          }
+          await addUsuario({ nome, email, perfil, obraId, senha });
+          showToast('Usuário cadastrado com sucesso.');
         }
-        await updateUsuario(editandoId, { nome, perfil, obraId });
-      } else {
-        const senha = document.getElementById('usuarioSenha').value;
-        if (!senha) {
-          showToast('Informe a senha inicial.', 'error');
-          return;
-        }
-        await addUsuario({ nome, email, perfil, obraId, senha });
+        fecharModal();
+      } catch (err) {
+        showToast(err?.message || 'Não foi possível salvar o usuário.', 'error');
       }
-
-      fecharModal();
     });
 
     tbody.addEventListener('click', async (event) => {

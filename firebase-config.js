@@ -16,8 +16,7 @@ import {
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
-  createUserWithEmailAndPassword,
-  sendPasswordResetEmail
+  createUserWithEmailAndPassword
 } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
 
 const firebaseConfig = {
@@ -154,7 +153,36 @@ export async function deleteUsuario(id) {
 }
 
 export async function resetSenha(email) {
-  await sendPasswordResetEmail(auth, email);
+  throw new Error("Fluxo de email desativado. Use redefinirSenhaUsuario.");
+}
+
+export async function redefinirSenhaUsuario(uid, novaSenha) {
+  const senha = String(novaSenha || "");
+  if (!uid) throw new Error("Usuário sem identificador de autenticação.");
+  if (!senha.trim()) throw new Error("Informe a nova senha.");
+  if (!auth.currentUser) throw new Error("Sessão expirada. Faça login novamente.");
+  const idToken = await auth.currentUser.getIdToken();
+
+  const response = await fetch("/api/Auth/redefinir-senha", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${idToken}`
+    },
+    body: JSON.stringify({ uid, novaSenha: senha })
+  });
+
+  let payload = null;
+  try {
+    payload = await response.json();
+  } catch {
+    payload = null;
+  }
+
+  if (!response.ok) {
+    const message = payload?.erro || "Não foi possível redefinir a senha agora.";
+    throw new Error(message);
+  }
 }
 
 export async function getUsuarioByEmail(email) {
